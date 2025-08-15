@@ -26,9 +26,10 @@ type GraphQLResponse struct {
 	} `json:"errors"`
 }
 
-func NewClient(endpoint string) *Client {
+func NewClient() *Client {
+	envConfig := Load()
 	return &Client{
-		endpoint: endpoint,
+		endpoint:   envConfig.GraphQLEndpoint,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},

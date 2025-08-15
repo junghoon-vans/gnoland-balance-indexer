@@ -4,10 +4,7 @@ go 1.23
 
 toolchain go1.23.4
 
-require (
-	github.com/joho/godotenv v1.5.1
-	gnoland-balance-indexer v0.0.0-00010101000000-000000000000
-)
+require gnoland-balance-indexer v0.0.0-00010101000000-000000000000
 
 require (
 	github.com/aws/aws-sdk-go v1.55.8 // indirect
@@ -18,6 +15,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/text v0.21.0 // indirect

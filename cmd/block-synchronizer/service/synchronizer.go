@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"block-synchronizer/config"
 	"block-synchronizer/dto"
 	"block-synchronizer/repository"
 	"block-synchronizer/utils"
@@ -25,7 +24,6 @@ type synchronizerService struct {
 	blockRepo    repository.BlockRepository
 	sqsClient    *queue.SQSClient
 	gqlClient    *graphql.Client
-	cfg          *config.Config
 	lastHeight   int64
 	syncInterval time.Duration
 }
@@ -33,13 +31,12 @@ type synchronizerService struct {
 func NewSynchronizerService(
 	blockRepo repository.BlockRepository,
 	sqsClient *queue.SQSClient,
-	cfg *config.Config,
+	gqlClient *graphql.Client,
 ) SynchronizerService {
 	return &synchronizerService{
 		blockRepo:    blockRepo,
 		sqsClient:    sqsClient,
-		gqlClient:    graphql.NewClient(cfg.GraphQLEndpoint),
-		cfg:          cfg,
+		gqlClient:    gqlClient,
 		syncInterval: 10 * time.Second,
 	}
 }

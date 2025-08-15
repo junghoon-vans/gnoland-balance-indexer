@@ -3,7 +3,6 @@ package database
 import (
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"gnoland-balance-indexer/pkg/models"
@@ -18,19 +17,17 @@ type Database struct {
 }
 
 func NewPostgresDB() (*Database, error) {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		return nil, fmt.Errorf("DATABASE_URL environment variable is required")
-	}
+	dbConfig := Load()
+	dsn := dbConfig.DatabaseURL()
 
-	config := &gorm.Config{
+	gormConfig := &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 		NowFunc: func() time.Time {
 			return time.Now().UTC()
 		},
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), config)
+	db, err := gorm.Open(postgres.Open(dsn), gormConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}

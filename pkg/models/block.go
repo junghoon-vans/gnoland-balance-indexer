@@ -6,8 +6,8 @@ import (
 
 type Block struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
-	Hash      string    `gorm:"uniqueIndex;not null" json:"hash"`
-	Height    int64     `gorm:"uniqueIndex;not null" json:"height"`
+	Hash      string    `gorm:"unique;not null" json:"hash"`
+	Height    int64     `gorm:"unique;not null" json:"height"`
 	Time      time.Time `gorm:"not null" json:"time"`
 	NumTxs    int       `json:"num_txs"`
 	TotalTxs  int       `json:"total_txs"`
@@ -17,7 +17,7 @@ type Block struct {
 
 type Transaction struct {
 	ID          uint               `gorm:"primaryKey" json:"id"`
-	Hash        string             `gorm:"uniqueIndex;not null" json:"hash"`
+	Hash        string             `gorm:"unique;not null" json:"hash"` 
 	Index       int                `gorm:"not null" json:"index"`
 	BlockHeight int64              `gorm:"not null;index" json:"block_height"`
 	Success     bool               `gorm:"not null" json:"success"`

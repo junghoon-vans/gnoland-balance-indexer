@@ -8,29 +8,15 @@ import (
 	"syscall"
 	"time"
 
-	"block-synchronizer/config"
 	"block-synchronizer/repository"
 	"block-synchronizer/service"
 	"gnoland-balance-indexer/pkg/database"
+	"gnoland-balance-indexer/pkg/graphql"
 	"gnoland-balance-indexer/pkg/queue"
 )
 
 func main() {
 	log.Println("Starting Block Synchronizer...")
-
-	cfg := config.Load()
-
-	// Set DATABASE_URL for pkg/database compatibility
-	os.Setenv("DATABASE_URL", cfg.DatabaseURL())
-
-	// Set SQS environment variables for pkg/queue compatibility
-	os.Setenv("AWS_REGION", cfg.AWSRegion)
-	os.Setenv("AWS_ACCESS_KEY_ID", cfg.AWSAccessKey)
-	os.Setenv("AWS_SECRET_ACCESS_KEY", cfg.AWSSecretKey)
-	os.Setenv("SQS_QUEUE_URL", cfg.SQSQueueURL)
-	if cfg.AWSEndpointURL != "" {
-		os.Setenv("AWS_ENDPOINT_URL", cfg.AWSEndpointURL)
-	}
 
 	db, err := database.NewPostgresDB()
 	if err != nil {
@@ -50,11 +36,13 @@ func main() {
 		log.Fatalf("Failed to create SQS client: %v", err)
 	}
 
+	gqlClient := graphql.NewClient()
+
 	// Initialize repository
 	blockRepo := repository.NewBlockRepository(db)
 
 	// Initialize service
-	synchronizerService := service.NewSynchronizerService(blockRepo, sqsClient, cfg)
+	synchronizerService := service.NewSynchronizerService(blockRepo, sqsClient, gqlClient)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

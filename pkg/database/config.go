@@ -1,4 +1,4 @@
-package config
+package database
 
 import (
 	"log"
@@ -14,12 +14,6 @@ type Config struct {
 	DBPass          string
 	DBName          string
 	DBSSLMode       string
-	GraphQLEndpoint string
-	AWSRegion       string
-	AWSAccessKey    string
-	AWSSecretKey    string
-	SQSQueueURL     string
-	AWSEndpointURL  string
 }
 
 func Load() *Config {
@@ -36,12 +30,6 @@ func Load() *Config {
 		DBPass:          getEnv("DB_PASSWORD", "password"),
 		DBName:          getEnv("DB_NAME", "gno_indexer"),
 		DBSSLMode:       getEnv("DB_SSL_MODE", "disable"),
-		GraphQLEndpoint: getEnv("GRAPHQL_ENDPOINT", "https://indexer.gnoscan.io/graphql/query"),
-		AWSRegion:       getEnv("AWS_REGION", "us-east-1"),
-		AWSAccessKey:    getEnv("AWS_ACCESS_KEY_ID", ""),
-		AWSSecretKey:    getEnv("AWS_SECRET_ACCESS_KEY", ""),
-		SQSQueueURL:     getEnv("SQS_QUEUE_URL", ""),
-		AWSEndpointURL:  getEnv("AWS_ENDPOINT_URL", ""),
 	}
 }
 

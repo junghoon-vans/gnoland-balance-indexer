@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 
 	"gnoland-balance-indexer/pkg/models"
 
@@ -20,41 +19,35 @@ type SQSClient struct {
 }
 
 func NewSQSClient() (*SQSClient, error) {
-	region := os.Getenv("AWS_REGION")
-	if region == "" {
-		region = "ap-northeast-2"
-	}
+	queueConfig := Load()
 
-	endpointURL := os.Getenv("AWS_ENDPOINT_URL")
-	queueURL := os.Getenv("SQS_QUEUE_URL")
-
-	if queueURL == "" {
+	if queueConfig.SQSQueueURL == "" {
 		return nil, fmt.Errorf("SQS_QUEUE_URL environment variable is required")
 	}
 
-	config := &aws.Config{
-		Region: aws.String(region),
+	awsConfig := &aws.Config{
+		Region: aws.String(queueConfig.AWSRegion),
 		Credentials: credentials.NewStaticCredentials(
-			os.Getenv("AWS_ACCESS_KEY_ID"),
-			os.Getenv("AWS_SECRET_ACCESS_KEY"),
+			queueConfig.AWSAccessKey,
+			queueConfig.AWSSecretKey,
 			"",
 		),
 	}
 
-	if endpointURL != "" {
-		config.Endpoint = aws.String(endpointURL)
-		config.DisableSSL = aws.Bool(true)
-		config.S3ForcePathStyle = aws.Bool(true)
+	if queueConfig.AWSEndpointURL != "" {
+		awsConfig.Endpoint = aws.String(queueConfig.AWSEndpointURL)
+		awsConfig.DisableSSL = aws.Bool(true)
+		awsConfig.S3ForcePathStyle = aws.Bool(true)
 	}
 
-	sess, err := session.NewSession(config)
+	sess, err := session.NewSession(awsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AWS session: %w", err)
 	}
 
 	return &SQSClient{
 		client:   sqs.New(sess),
-		queueURL: queueURL,
+		queueURL: queueConfig.SQSQueueURL,
 	}, nil
 }
 
