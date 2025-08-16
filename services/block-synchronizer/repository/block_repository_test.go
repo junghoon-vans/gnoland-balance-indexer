@@ -20,7 +20,7 @@ type BlockRepositoryTestSuite struct {
 func (suite *BlockRepositoryTestSuite) SetupSuite() {
 	db, err := testutils.SetupInMemoryDB()
 	suite.Require().NoError(err)
-	
+
 	suite.db = db
 	suite.repo = NewBlockRepository(suite.db)
 }

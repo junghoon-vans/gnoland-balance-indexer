@@ -19,7 +19,7 @@ type TransferRepositoryTestSuite struct {
 func (suite *TransferRepositoryTestSuite) SetupSuite() {
 	db, err := testutils.SetupInMemoryDB()
 	suite.Require().NoError(err)
-	
+
 	suite.db = db
 	suite.repo = NewTransferRepository(suite.db)
 }

@@ -6,8 +6,8 @@ import (
 
 	"event-processor/repository"
 	"event-processor/utils"
-	"shared/models"
 	"shared/infra/queue"
+	"shared/models"
 )
 
 type TokenEventHandler interface {

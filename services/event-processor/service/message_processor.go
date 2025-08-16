@@ -13,9 +13,9 @@ type MessageProcessor interface {
 }
 
 type messageProcessor struct {
-	sqsClient        *queue.SQSClient
+	sqsClient         *queue.SQSClient
 	tokenEventHandler TokenEventHandler
-	maxMessages      int64
+	maxMessages       int64
 }
 
 func NewMessageProcessor(
@@ -24,9 +24,9 @@ func NewMessageProcessor(
 	maxMessages int64,
 ) MessageProcessor {
 	return &messageProcessor{
-		sqsClient:        sqsClient,
+		sqsClient:         sqsClient,
 		tokenEventHandler: tokenEventHandler,
-		maxMessages:      maxMessages,
+		maxMessages:       maxMessages,
 	}
 }
 

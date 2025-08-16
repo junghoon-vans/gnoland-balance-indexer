@@ -8,11 +8,11 @@ import (
 )
 
 type Config struct {
-	AWSRegion       string
-	AWSAccessKey    string
-	AWSSecretKey    string
-	SQSQueueURL     string
-	AWSEndpointURL  string
+	AWSRegion      string
+	AWSAccessKey   string
+	AWSSecretKey   string
+	SQSQueueURL    string
+	AWSEndpointURL string
 }
 
 func Load() *Config {
@@ -23,11 +23,11 @@ func Load() *Config {
 	}
 
 	return &Config{
-		AWSRegion:       getEnv("AWS_REGION", "ap-northeast-2"),
-		AWSAccessKey:    getEnv("AWS_ACCESS_KEY_ID", ""),
-		AWSSecretKey:    getEnv("AWS_SECRET_ACCESS_KEY", ""),
-		SQSQueueURL:     getEnv("SQS_QUEUE_URL", ""),
-		AWSEndpointURL:  getEnv("AWS_ENDPOINT_URL", ""),
+		AWSRegion:      getEnv("AWS_REGION", "ap-northeast-2"),
+		AWSAccessKey:   getEnv("AWS_ACCESS_KEY_ID", ""),
+		AWSSecretKey:   getEnv("AWS_SECRET_ACCESS_KEY", ""),
+		SQSQueueURL:    getEnv("SQS_QUEUE_URL", ""),
+		AWSEndpointURL: getEnv("AWS_ENDPOINT_URL", ""),
 	}
 }
 

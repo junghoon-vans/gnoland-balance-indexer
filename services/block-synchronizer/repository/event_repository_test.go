@@ -19,7 +19,7 @@ type EventRepositoryTestSuite struct {
 func (suite *EventRepositoryTestSuite) SetupSuite() {
 	db, err := testutils.SetupInMemoryDB()
 	suite.Require().NoError(err)
-	
+
 	suite.db = db
 	suite.repo = NewEventRepository(suite.db)
 }

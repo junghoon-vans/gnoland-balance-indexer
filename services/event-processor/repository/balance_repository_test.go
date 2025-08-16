@@ -18,7 +18,7 @@ type BalanceRepositoryTestSuite struct {
 func (suite *BalanceRepositoryTestSuite) SetupSuite() {
 	db, err := testutils.SetupInMemoryDB()
 	suite.Require().NoError(err)
-	
+
 	suite.db = db
 	suite.repo = NewBalanceRepository(suite.db)
 }

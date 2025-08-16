@@ -17,7 +17,7 @@ type Block struct {
 
 type Transaction struct {
 	ID          uint               `gorm:"primaryKey" json:"id"`
-	Hash        string             `gorm:"unique;not null" json:"hash"` 
+	Hash        string             `gorm:"unique;not null" json:"hash"`
 	Index       int                `gorm:"not null" json:"index"`
 	BlockHeight int64              `gorm:"not null;index" json:"block_height"`
 	Success     bool               `gorm:"not null" json:"success"`
@@ -39,12 +39,12 @@ type TransactionMsg struct {
 }
 
 type TransactionEvent struct {
-	ID            uint                      `gorm:"primaryKey" json:"id"`
-	TransactionID uint                      `gorm:"not null;index" json:"transaction_id"`
-	Type          string                    `gorm:"not null" json:"type"`
-	Func          string                    `json:"func"`
-	PkgPath       string                    `json:"pkg_path"`
-	Attrs         []TransactionEventAttr    `gorm:"foreignKey:EventID;constraint:OnDelete:CASCADE" json:"attrs"`
+	ID            uint                   `gorm:"primaryKey" json:"id"`
+	TransactionID uint                   `gorm:"not null;index" json:"transaction_id"`
+	Type          string                 `gorm:"not null" json:"type"`
+	Func          string                 `json:"func"`
+	PkgPath       string                 `json:"pkg_path"`
+	Attrs         []TransactionEventAttr `gorm:"foreignKey:EventID;constraint:OnDelete:CASCADE" json:"attrs"`
 }
 
 type TransactionEventAttr struct {

@@ -29,7 +29,7 @@ type GraphQLResponse struct {
 func NewClient() *Client {
 	envConfig := Load()
 	return &Client{
-		endpoint:   envConfig.GraphQLEndpoint,
+		endpoint: envConfig.GraphQLEndpoint,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},

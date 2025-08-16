@@ -57,6 +57,22 @@ docker-compose up -d
 curl http://localhost:8080/tokens/balances
 ```
 
+## Development
+
+### Prerequisites
+- Go 1.21+
+- Docker & Docker Compose
+
+### Build and Test
+```bash
+make help
+
+make test # Run all tests
+make build # Build all services
+make fmt # Format and lint code
+make clean # Clean up
+```
+
 ## API Endpoints
 
 ### Token Balances

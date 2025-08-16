@@ -3,8 +3,8 @@ package utils
 import (
 	"testing"
 
-	"shared/infra/queue"
 	"github.com/stretchr/testify/assert"
+	"shared/infra/queue"
 )
 
 func TestGetTransferType(t *testing.T) {

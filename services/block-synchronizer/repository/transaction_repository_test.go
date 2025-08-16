@@ -19,7 +19,7 @@ type TransactionRepositoryTestSuite struct {
 func (suite *TransactionRepositoryTestSuite) SetupSuite() {
 	db, err := testutils.SetupInMemoryDB()
 	suite.Require().NoError(err)
-	
+
 	suite.db = db
 	suite.repo = NewTransactionRepository(suite.db)
 }
@@ -89,19 +89,19 @@ func (suite *TransactionRepositoryTestSuite) TestSaveTransactionWithDuplicateHas
 func (suite *TransactionRepositoryTestSuite) TestSaveMultipleTransactions() {
 	tx1 := testutils.CreateTestTransaction(testutils.TestTransactionHash1, 12345)
 	tx1.Memo = "first transaction"
-	
+
 	tx2 := testutils.CreateTestTransaction(testutils.TestTransactionHash2, 12345)
 	tx2.Index = 1
 	tx2.Success = false
 	tx2.GasWanted = 200000
 	tx2.GasUsed = 150000
 	tx2.Memo = "second transaction"
-	
+
 	tx3 := testutils.CreateTestTransaction("0x789unique", 12346)
 	tx3.GasWanted = 300000
 	tx3.GasUsed = 200000
 	tx3.Memo = "third transaction"
-	
+
 	transactions := []*models.Transaction{tx1, tx2, tx3}
 
 	// Save all transactions

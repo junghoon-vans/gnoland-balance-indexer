@@ -7,8 +7,8 @@ import (
 
 	"event-processor/repository"
 	"shared/infra/database"
-	"shared/models"
 	"shared/infra/queue"
+	"shared/models"
 
 	"gorm.io/gorm"
 )
