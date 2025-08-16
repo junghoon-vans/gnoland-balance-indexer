@@ -1,4 +1,4 @@
-package models
+package queue
 
 import (
 	"encoding/json"

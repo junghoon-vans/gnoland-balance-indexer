@@ -38,11 +38,21 @@ func main() {
 
 	gqlClient := graphql.NewClient()
 
-	// Initialize repository
+	// Initialize repositories
 	blockRepo := repository.NewBlockRepository(db)
+	transactionRepo := repository.NewTransactionRepository(db)
+	eventRepo := repository.NewEventRepository(db)
 
-	// Initialize service
-	synchronizerService := service.NewSynchronizerService(blockRepo, sqsClient, gqlClient)
+	// Initialize services
+	eventService := service.NewEventService(eventRepo, sqsClient)
+	transactionService := service.NewTransactionService(transactionRepo, gqlClient, eventService)
+	blockService := service.NewBlockService(blockRepo, transactionRepo, eventRepo, gqlClient)
+
+	// Initialize synchronizer service
+	synchronizerService := service.NewSynchronizerService(blockRepo, blockService)
+
+	// Use transactionService to avoid unused variable error
+	_ = transactionService
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
