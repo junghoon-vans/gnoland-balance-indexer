@@ -21,10 +21,6 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	if err := db.AutoMigrate(); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
-
 	// Initialize repositories
 	balanceRepo := repository.NewBalanceRepository(db)
 	transferRepo := repository.NewTransferRepository(db)

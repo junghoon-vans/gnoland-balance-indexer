@@ -6,7 +6,7 @@ WORKDIR /app
 COPY . .
 
 # Build the specific service
-WORKDIR /app/cmd/balance-api
+WORKDIR /app/services/balance-api
 RUN go mod download && go build -o /app/balance-api .
 
 FROM alpine:latest

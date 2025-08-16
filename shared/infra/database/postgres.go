@@ -2,10 +2,7 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"time"
-
-	"shared/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -42,18 +39,4 @@ func NewPostgresDB() (*Database, error) {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	return &Database{db}, nil
-}
-
-func (d *Database) AutoMigrate() error {
-	log.Println("Running database migrations...")
-
-	return d.DB.AutoMigrate(
-		&models.Block{},
-		&models.Transaction{},
-		&models.TransactionMsg{},
-		&models.TransactionEvent{},
-		&models.TransactionEventAttr{},
-		&models.TokenBalance{},
-		&models.TokenTransfer{},
-	)
 }

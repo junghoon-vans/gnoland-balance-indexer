@@ -76,6 +76,19 @@ services:
     deploy:
       replicas: 2
 
+  balance-api:
+    build:
+      context: .
+      dockerfile: services/balance-api/Dockerfile
+    env_file:
+      - services/balance-api/config/.env.example
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   localstack_data:
