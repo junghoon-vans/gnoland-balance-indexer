@@ -9,6 +9,7 @@ import (
 	"block-synchronizer/dto"
 	"shared/infra/queue"
 	"shared/models"
+	"shared/testutils"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -55,12 +56,11 @@ func (suite *EventServiceTestSuite) SetupTest() {
 }
 
 func (suite *EventServiceTestSuite) TearDownTest() {
-	suite.eventRepo.AssertExpectations(suite.T())
-	suite.sqsClient.AssertExpectations(suite.T())
+	testutils.AssertMockExpectations(suite.T(), &suite.eventRepo.Mock, &suite.sqsClient.Mock)
 }
 
 func (suite *EventServiceTestSuite) TestProcessEvent_Success() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
 	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
@@ -95,7 +95,7 @@ func (suite *EventServiceTestSuite) TestProcessEvent_Success() {
 }
 
 func (suite *EventServiceTestSuite) TestProcessEvent_NoAttrs() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
 	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
@@ -116,7 +116,7 @@ func (suite *EventServiceTestSuite) TestProcessEvent_NoAttrs() {
 }
 
 func (suite *EventServiceTestSuite) TestProcessEvent_SaveError() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
 	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
@@ -143,7 +143,7 @@ func (suite *EventServiceTestSuite) TestProcessEvent_SaveError() {
 }
 
 func (suite *EventServiceTestSuite) TestProcessEvent_SaveEventAttrError() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
 	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
@@ -176,7 +176,7 @@ func (suite *EventServiceTestSuite) TestProcessEvent_SaveEventAttrError() {
 }
 
 func (suite *EventServiceTestSuite) TestProcessEvent_NilEvent() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
 	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
@@ -190,7 +190,7 @@ func (suite *EventServiceTestSuite) TestProcessEvent_NilEvent() {
 }
 
 func (suite *EventServiceTestSuite) TestProcessEvent_EmptyType() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
 	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
@@ -211,7 +211,7 @@ func (suite *EventServiceTestSuite) TestProcessEvent_EmptyType() {
 }
 
 func (suite *EventServiceTestSuite) TestProcessEvent_ManyAttrs() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
 	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",

@@ -8,6 +8,7 @@ import (
 
 	"block-synchronizer/dto"
 	"shared/models"
+	"shared/testutils"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -51,19 +52,15 @@ func (suite *SynchronizerServiceTestSuite) SetupTest() {
 }
 
 func (suite *SynchronizerServiceTestSuite) TearDownTest() {
-	suite.blockRepo.AssertExpectations(suite.T())
-	suite.blockService.AssertExpectations(suite.T())
+	testutils.AssertMockExpectations(suite.T(), &suite.blockRepo.Mock, &suite.blockService.Mock)
 }
 
 func (suite *SynchronizerServiceTestSuite) TestStart_WithExistingBlocks() {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(testutils.CreateTestContext(), 100*time.Millisecond)
 	defer cancel()
 
 	// Mock existing block
-	existingBlock := &models.Block{
-		Height: 100,
-		Hash:   "existing-hash",
-	}
+	existingBlock := testutils.CreateTestBlock(100, "existing-hash")
 
 	// Mock GetLastBlock to return existing block
 	suite.blockRepo.On("GetLastBlock").Return(existingBlock, nil).Once()
@@ -76,7 +73,7 @@ func (suite *SynchronizerServiceTestSuite) TestStart_WithExistingBlocks() {
 }
 
 func (suite *SynchronizerServiceTestSuite) TestStart_WithNoExistingBlocks() {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(testutils.CreateTestContext(), 100*time.Millisecond)
 	defer cancel()
 
 	// Mock no existing blocks
@@ -93,7 +90,7 @@ func (suite *SynchronizerServiceTestSuite) TestStart_WithNoExistingBlocks() {
 }
 
 func (suite *SynchronizerServiceTestSuite) TestStart_BackfillError() {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(testutils.CreateTestContext(), 100*time.Millisecond)
 	defer cancel()
 
 	// Mock no existing blocks
@@ -111,14 +108,11 @@ func (suite *SynchronizerServiceTestSuite) TestStart_BackfillError() {
 }
 
 func (suite *SynchronizerServiceTestSuite) TestStart_GetLatestBlockHeightError() {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(testutils.CreateTestContext(), 100*time.Millisecond)
 	defer cancel()
 
 	// Mock existing block
-	existingBlock := &models.Block{
-		Height: 100,
-		Hash:   "existing-hash",
-	}
+	existingBlock := testutils.CreateTestBlock(100, "existing-hash")
 
 	// Mock GetLastBlock to return existing block
 	suite.blockRepo.On("GetLastBlock").Return(existingBlock, nil).Once()
@@ -132,14 +126,11 @@ func (suite *SynchronizerServiceTestSuite) TestStart_GetLatestBlockHeightError()
 }
 
 func (suite *SynchronizerServiceTestSuite) TestStart_ContextCancellation() {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(testutils.CreateTestContext())
 	cancel() // Cancel immediately
 
 	// Mock existing block
-	existingBlock := &models.Block{
-		Height: 100,
-		Hash:   "existing-hash",
-	}
+	existingBlock := testutils.CreateTestBlock(100, "existing-hash")
 
 	// Mock GetLastBlock to return existing block
 	suite.blockRepo.On("GetLastBlock").Return(existingBlock, nil).Once()
@@ -152,14 +143,11 @@ func (suite *SynchronizerServiceTestSuite) TestStart_ContextCancellation() {
 }
 
 func (suite *SynchronizerServiceTestSuite) TestStart_WithNewBlocks() {
-	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	ctx, cancel := context.WithTimeout(testutils.CreateTestContext(), 200*time.Millisecond)
 	defer cancel()
 
 	// Mock existing block
-	existingBlock := &models.Block{
-		Height: 100,
-		Hash:   "existing-hash",
-	}
+	existingBlock := testutils.CreateTestBlock(100, "existing-hash")
 
 	// Mock GetLastBlock to return existing block
 	suite.blockRepo.On("GetLastBlock").Return(existingBlock, nil).Once()

@@ -5,10 +5,9 @@ import (
 
 	"shared/infra/database"
 	"shared/models"
+	"shared/testutils"
 
 	"github.com/stretchr/testify/suite"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 type TransactionRepositoryTestSuite struct {
@@ -18,36 +17,19 @@ type TransactionRepositoryTestSuite struct {
 }
 
 func (suite *TransactionRepositoryTestSuite) SetupSuite() {
-	// Use in-memory SQLite database
-	gormDB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	db, err := testutils.SetupInMemoryDB()
 	suite.Require().NoError(err)
-
-	suite.db = &database.Database{DB: gormDB}
-
-	// Create tables
-	err = suite.db.DB.AutoMigrate(&models.Transaction{}, &models.TransactionMsg{}, &models.TransactionEvent{})
-	suite.Require().NoError(err)
-
+	
+	suite.db = db
 	suite.repo = NewTransactionRepository(suite.db)
 }
 
 func (suite *TransactionRepositoryTestSuite) TearDownTest() {
-	// Clean up data after each test
-	suite.db.Exec("DELETE FROM transaction_msgs")
-	suite.db.Exec("DELETE FROM transaction_events")
-	suite.db.Exec("DELETE FROM transactions")
+	testutils.CleanupDatabase(suite.db)
 }
 
 func (suite *TransactionRepositoryTestSuite) TestSaveTransaction() {
-	tx := &models.Transaction{
-		Hash:        "0x123abc",
-		Index:       0,
-		BlockHeight: 12345,
-		Success:     true,
-		GasWanted:   100000,
-		GasUsed:     50000,
-		Memo:        "test transaction",
-	}
+	tx := testutils.CreateTestTransaction(testutils.TestTransactionHash1, 12345)
 
 	err := suite.repo.SaveTransaction(tx)
 	suite.Assert().NoError(err)
@@ -58,7 +40,7 @@ func (suite *TransactionRepositoryTestSuite) TestSaveTransaction() {
 	var savedTx models.Transaction
 	err = suite.db.First(&savedTx, tx.ID).Error
 	suite.Assert().NoError(err)
-	suite.Assert().Equal("0x123abc", savedTx.Hash)
+	suite.Assert().Equal(testutils.TestTransactionHash1, savedTx.Hash)
 	suite.Assert().Equal(0, savedTx.Index)
 	suite.Assert().Equal(int64(12345), savedTx.BlockHeight)
 	suite.Assert().Equal(true, savedTx.Success)
@@ -68,15 +50,12 @@ func (suite *TransactionRepositoryTestSuite) TestSaveTransaction() {
 }
 
 func (suite *TransactionRepositoryTestSuite) TestSaveTransactionWithoutMemo() {
-	tx := &models.Transaction{
-		Hash:        "0x456def",
-		Index:       1,
-		BlockHeight: 12346,
-		Success:     false,
-		GasWanted:   200000,
-		GasUsed:     150000,
-		// No memo
-	}
+	tx := testutils.CreateTestTransaction(testutils.TestTransactionHash2, 12346)
+	tx.Index = 1
+	tx.Success = false
+	tx.GasWanted = 200000
+	tx.GasUsed = 150000
+	tx.Memo = "" // No memo
 
 	err := suite.repo.SaveTransaction(tx)
 	suite.Assert().NoError(err)
@@ -86,29 +65,17 @@ func (suite *TransactionRepositoryTestSuite) TestSaveTransactionWithoutMemo() {
 	var savedTx models.Transaction
 	err = suite.db.First(&savedTx, tx.ID).Error
 	suite.Assert().NoError(err)
-	suite.Assert().Equal("0x456def", savedTx.Hash)
+	suite.Assert().Equal(testutils.TestTransactionHash2, savedTx.Hash)
 	suite.Assert().Equal(false, savedTx.Success)
 	suite.Assert().Equal("", savedTx.Memo)
 }
 
 func (suite *TransactionRepositoryTestSuite) TestSaveTransactionWithDuplicateHash() {
-	tx1 := &models.Transaction{
-		Hash:        "0x123abc",
-		Index:       0,
-		BlockHeight: 12345,
-		Success:     true,
-		GasWanted:   100000,
-		GasUsed:     50000,
-	}
-
-	tx2 := &models.Transaction{
-		Hash:        "0x123abc", // Same hash
-		Index:       1,
-		BlockHeight: 12346,
-		Success:     true,
-		GasWanted:   200000,
-		GasUsed:     100000,
-	}
+	tx1 := testutils.CreateTestTransaction(testutils.TestTransactionHash1, 12345)
+	tx2 := testutils.CreateTestTransaction(testutils.TestTransactionHash1, 12346) // Same hash
+	tx2.Index = 1
+	tx2.GasWanted = 200000
+	tx2.GasUsed = 100000
 
 	// Save first transaction
 	err := suite.repo.SaveTransaction(tx1)
@@ -120,35 +87,22 @@ func (suite *TransactionRepositoryTestSuite) TestSaveTransactionWithDuplicateHas
 }
 
 func (suite *TransactionRepositoryTestSuite) TestSaveMultipleTransactions() {
-	transactions := []*models.Transaction{
-		{
-			Hash:        "0x123abc",
-			Index:       0,
-			BlockHeight: 12345,
-			Success:     true,
-			GasWanted:   100000,
-			GasUsed:     50000,
-			Memo:        "first transaction",
-		},
-		{
-			Hash:        "0x456def",
-			Index:       1,
-			BlockHeight: 12345,
-			Success:     false,
-			GasWanted:   200000,
-			GasUsed:     150000,
-			Memo:        "second transaction",
-		},
-		{
-			Hash:        "0x789ghi",
-			Index:       0,
-			BlockHeight: 12346,
-			Success:     true,
-			GasWanted:   300000,
-			GasUsed:     200000,
-			Memo:        "third transaction",
-		},
-	}
+	tx1 := testutils.CreateTestTransaction(testutils.TestTransactionHash1, 12345)
+	tx1.Memo = "first transaction"
+	
+	tx2 := testutils.CreateTestTransaction(testutils.TestTransactionHash2, 12345)
+	tx2.Index = 1
+	tx2.Success = false
+	tx2.GasWanted = 200000
+	tx2.GasUsed = 150000
+	tx2.Memo = "second transaction"
+	
+	tx3 := testutils.CreateTestTransaction("0x789unique", 12346)
+	tx3.GasWanted = 300000
+	tx3.GasUsed = 200000
+	tx3.Memo = "third transaction"
+	
+	transactions := []*models.Transaction{tx1, tx2, tx3}
 
 	// Save all transactions
 	for _, tx := range transactions {
@@ -164,15 +118,11 @@ func (suite *TransactionRepositoryTestSuite) TestSaveMultipleTransactions() {
 }
 
 func (suite *TransactionRepositoryTestSuite) TestSaveTransactionWithZeroValues() {
-	tx := &models.Transaction{
-		Hash:        "0x000000",
-		Index:       0,
-		BlockHeight: 0, // Zero block height
-		Success:     false,
-		GasWanted:   0, // Zero gas wanted
-		GasUsed:     0, // Zero gas used
-		Memo:        "",
-	}
+	tx := testutils.CreateTestTransaction("0x000000", 0) // Zero block height
+	tx.Success = false
+	tx.GasWanted = 0 // Zero gas wanted
+	tx.GasUsed = 0   // Zero gas used
+	tx.Memo = ""
 
 	// GORM allows zero values by default
 	err := suite.repo.SaveTransaction(tx)
@@ -189,15 +139,11 @@ func (suite *TransactionRepositoryTestSuite) TestSaveTransactionWithZeroValues()
 }
 
 func (suite *TransactionRepositoryTestSuite) TestSaveTransactionWithLargeValues() {
-	tx := &models.Transaction{
-		Hash:        "0xabcdef123456789",
-		Index:       999,
-		BlockHeight: 9999999999,
-		Success:     true,
-		GasWanted:   9999999999,
-		GasUsed:     8888888888,
-		Memo:        "This is a very long memo field that contains a lot of text to test how the database handles longer strings and whether there are any issues with storage or retrieval of such data.",
-	}
+	tx := testutils.CreateTestTransaction("0xabcdef123456789", 9999999999)
+	tx.Index = 999
+	tx.GasWanted = 9999999999
+	tx.GasUsed = 8888888888
+	tx.Memo = "This is a very long memo field that contains a lot of text to test how the database handles longer strings and whether there are any issues with storage or retrieval of such data."
 
 	err := suite.repo.SaveTransaction(tx)
 	suite.Assert().NoError(err)

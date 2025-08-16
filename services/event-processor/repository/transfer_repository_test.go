@@ -5,10 +5,9 @@ import (
 
 	"shared/infra/database"
 	"shared/models"
+	"shared/testutils"
 
 	"github.com/stretchr/testify/suite"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 type TransferRepositoryTestSuite struct {
@@ -18,35 +17,19 @@ type TransferRepositoryTestSuite struct {
 }
 
 func (suite *TransferRepositoryTestSuite) SetupSuite() {
-	// Use in-memory SQLite database
-	gormDB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	db, err := testutils.SetupInMemoryDB()
 	suite.Require().NoError(err)
-
-	suite.db = &database.Database{DB: gormDB}
-
-	// Create tables
-	err = suite.db.DB.AutoMigrate(&models.TokenTransfer{})
-	suite.Require().NoError(err)
-
+	
+	suite.db = db
 	suite.repo = NewTransferRepository(suite.db)
 }
 
 func (suite *TransferRepositoryTestSuite) TearDownTest() {
-	// Clean up data after each test
-	suite.db.Exec("DELETE FROM token_transfers")
+	testutils.CleanupDatabase(suite.db)
 }
 
 func (suite *TransferRepositoryTestSuite) TestSaveTransfer() {
-	transfer := &models.TokenTransfer{
-		BlockHeight:  12345,
-		TxHash:       "0x123abc",
-		EventID:      1,
-		FromAddress:  "g1from123",
-		ToAddress:    "g1to456",
-		TokenPath:    "gno.land/r/demo/grc20",
-		Amount:       "1000",
-		TransferType: "transfer",
-	}
+	transfer := testutils.CreateTestNormalTransfer(12345, testutils.TestTransactionHash1, 1, testutils.TestAddress1, testutils.TestAddress2, testutils.TestTokenPath, "1000")
 
 	err := suite.repo.SaveTransfer(transfer)
 	suite.Assert().NoError(err)
@@ -55,16 +38,7 @@ func (suite *TransferRepositoryTestSuite) TestSaveTransfer() {
 }
 
 func (suite *TransferRepositoryTestSuite) TestSaveTransferWithMint() {
-	transfer := &models.TokenTransfer{
-		BlockHeight:  12346,
-		TxHash:       "0x456def",
-		EventID:      2,
-		FromAddress:  "", // Empty from address for mint
-		ToAddress:    "g1to456",
-		TokenPath:    "gno.land/r/demo/grc20",
-		Amount:       "500",
-		TransferType: "mint",
-	}
+	transfer := testutils.CreateTestMintTransfer(12346, testutils.TestTransactionHash2, 2, testutils.TestAddress2, testutils.TestTokenPath, "500")
 
 	err := suite.repo.SaveTransfer(transfer)
 	suite.Assert().NoError(err)
@@ -74,16 +48,7 @@ func (suite *TransferRepositoryTestSuite) TestSaveTransferWithMint() {
 }
 
 func (suite *TransferRepositoryTestSuite) TestSaveTransferWithBurn() {
-	transfer := &models.TokenTransfer{
-		BlockHeight:  12347,
-		TxHash:       "0x789ghi",
-		EventID:      3,
-		FromAddress:  "g1from123",
-		ToAddress:    "", // Empty to address for burn
-		TokenPath:    "gno.land/r/demo/grc20",
-		Amount:       "200",
-		TransferType: "burn",
-	}
+	transfer := testutils.CreateTestBurnTransfer(12347, "0x789ghi", 3, testutils.TestAddress1, testutils.TestTokenPath, "200")
 
 	err := suite.repo.SaveTransfer(transfer)
 	suite.Assert().NoError(err)
@@ -94,26 +59,8 @@ func (suite *TransferRepositoryTestSuite) TestSaveTransferWithBurn() {
 
 func (suite *TransferRepositoryTestSuite) TestSaveMultipleTransfers() {
 	transfers := []*models.TokenTransfer{
-		{
-			BlockHeight:  12345,
-			TxHash:       "0x123abc",
-			EventID:      1,
-			FromAddress:  "g1from123",
-			ToAddress:    "g1to456",
-			TokenPath:    "gno.land/r/demo/grc20",
-			Amount:       "1000",
-			TransferType: "transfer",
-		},
-		{
-			BlockHeight:  12346,
-			TxHash:       "0x456def",
-			EventID:      2,
-			FromAddress:  "g1from789",
-			ToAddress:    "g1to123",
-			TokenPath:    "gno.land/r/demo/grc20",
-			Amount:       "500",
-			TransferType: "transfer",
-		},
+		testutils.CreateTestNormalTransfer(12345, testutils.TestTransactionHash1, 1, testutils.TestAddress1, testutils.TestAddress2, testutils.TestTokenPath, "1000"),
+		testutils.CreateTestNormalTransfer(12346, testutils.TestTransactionHash2, 2, "g1from789", "g1to123", testutils.TestTokenPath, "500"),
 	}
 
 	for _, transfer := range transfers {
@@ -130,16 +77,8 @@ func (suite *TransferRepositoryTestSuite) TestSaveMultipleTransfers() {
 
 func (suite *TransferRepositoryTestSuite) TestSaveTransferValidation() {
 	// Test case with missing required fields
-	transfer := &models.TokenTransfer{
-		// Missing BlockHeight
-		TxHash:       "0x123abc",
-		EventID:      1,
-		FromAddress:  "g1from123",
-		ToAddress:    "g1to456",
-		TokenPath:    "gno.land/r/demo/grc20",
-		Amount:       "1000",
-		TransferType: "transfer",
-	}
+	transfer := testutils.CreateTestNormalTransfer(0, testutils.TestTransactionHash1, 1, testutils.TestAddress1, testutils.TestAddress2, testutils.TestTokenPath, "1000")
+	// Set BlockHeight to 0 to test missing required field
 
 	// GORM allows zero values by default, so errors may not occur
 	// In production, validation should be done with database constraints

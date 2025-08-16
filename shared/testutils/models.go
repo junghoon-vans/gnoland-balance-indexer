@@ -1,38 +1,54 @@
-package repository
+package testutils
 
 import (
-	"shared/infra/database"
-	"shared/models"
+	"time"
 
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+	"shared/models"
 )
 
-// SetupTestDatabase creates an in-memory database for testing
-func SetupTestDatabase() (*database.Database, error) {
-	gormDB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		return nil, err
+// Block test helpers
+func CreateTestBlock(height int64, hash string) *models.Block {
+	return &models.Block{
+		Hash:     hash,
+		Height:   height,
+		Time:     time.Now(),
+		NumTxs:   5,
+		TotalTxs: 100,
 	}
-
-	db := &database.Database{DB: gormDB}
-
-	// Create tables
-	err = db.DB.AutoMigrate(&models.TokenBalance{}, &models.TokenTransfer{})
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
 }
 
-// CleanupTestDatabase cleans up all data in the test database
-func CleanupTestDatabase(db *database.Database) {
-	db.Exec("DELETE FROM token_balances")
-	db.Exec("DELETE FROM token_transfers")
+// Transaction test helpers
+func CreateTestTransaction(hash string, blockHeight int64) *models.Transaction {
+	return &models.Transaction{
+		Hash:        hash,
+		Index:       0,
+		BlockHeight: blockHeight,
+		Success:     true,
+		GasWanted:   100000,
+		GasUsed:     50000,
+		Memo:        "test transaction",
+	}
 }
 
-// CreateTestBalance creates a TokenBalance for testing
+// Transaction Event test helpers
+func CreateTestTransactionEvent(transactionID uint, eventType string) *models.TransactionEvent {
+	return &models.TransactionEvent{
+		TransactionID: transactionID,
+		Type:          eventType,
+		Func:          "Transfer",
+		PkgPath:       "gno.land/r/demo/grc20",
+	}
+}
+
+func CreateTestTransactionEventAttr(eventID uint, key, value string) *models.TransactionEventAttr {
+	return &models.TransactionEventAttr{
+		EventID: eventID,
+		Key:     key,
+		Value:   value,
+	}
+}
+
+// Token Balance test helpers
 func CreateTestBalance(address, tokenPath, amount string) *models.TokenBalance {
 	return &models.TokenBalance{
 		Address:   address,
@@ -41,7 +57,7 @@ func CreateTestBalance(address, tokenPath, amount string) *models.TokenBalance {
 	}
 }
 
-// CreateTestTransfer creates a TokenTransfer for testing
+// Token Transfer test helpers
 func CreateTestTransfer(blockHeight int64, txHash string, eventID uint, fromAddr, toAddr, tokenPath, amount, transferType string) *models.TokenTransfer {
 	return &models.TokenTransfer{
 		BlockHeight:  blockHeight,
@@ -55,17 +71,14 @@ func CreateTestTransfer(blockHeight int64, txHash string, eventID uint, fromAddr
 	}
 }
 
-// CreateTestMintTransfer creates a mint transfer for testing
 func CreateTestMintTransfer(blockHeight int64, txHash string, eventID uint, toAddr, tokenPath, amount string) *models.TokenTransfer {
 	return CreateTestTransfer(blockHeight, txHash, eventID, "", toAddr, tokenPath, amount, "mint")
 }
 
-// CreateTestBurnTransfer creates a burn transfer for testing
 func CreateTestBurnTransfer(blockHeight int64, txHash string, eventID uint, fromAddr, tokenPath, amount string) *models.TokenTransfer {
 	return CreateTestTransfer(blockHeight, txHash, eventID, fromAddr, "", tokenPath, amount, "burn")
 }
 
-// CreateTestNormalTransfer creates a normal transfer for testing
 func CreateTestNormalTransfer(blockHeight int64, txHash string, eventID uint, fromAddr, toAddr, tokenPath, amount string) *models.TokenTransfer {
 	return CreateTestTransfer(blockHeight, txHash, eventID, fromAddr, toAddr, tokenPath, amount, "transfer")
 }

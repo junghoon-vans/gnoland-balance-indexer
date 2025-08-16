@@ -5,10 +5,9 @@ import (
 
 	"shared/infra/database"
 	"shared/models"
+	"shared/testutils"
 
 	"github.com/stretchr/testify/suite"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 type EventRepositoryTestSuite struct {
@@ -18,46 +17,24 @@ type EventRepositoryTestSuite struct {
 }
 
 func (suite *EventRepositoryTestSuite) SetupSuite() {
-	// Use in-memory SQLite database
-	gormDB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	db, err := testutils.SetupInMemoryDB()
 	suite.Require().NoError(err)
-
-	suite.db = &database.Database{DB: gormDB}
-
-	// Create tables
-	err = suite.db.DB.AutoMigrate(&models.Transaction{}, &models.TransactionEvent{}, &models.TransactionEventAttr{})
-	suite.Require().NoError(err)
-
+	
+	suite.db = db
 	suite.repo = NewEventRepository(suite.db)
 }
 
 func (suite *EventRepositoryTestSuite) TearDownTest() {
-	// Clean up data after each test
-	suite.db.Exec("DELETE FROM transaction_event_attrs")
-	suite.db.Exec("DELETE FROM transaction_events")
-	suite.db.Exec("DELETE FROM transactions")
+	testutils.CleanupDatabase(suite.db)
 }
 
 func (suite *EventRepositoryTestSuite) TestSaveEvent() {
 	// First create a transaction to reference
-	tx := &models.Transaction{
-		Hash:        "0x123abc",
-		Index:       0,
-		BlockHeight: 12345,
-		Success:     true,
-		GasWanted:   100000,
-		GasUsed:     50000,
-		Memo:        "test transaction",
-	}
+	tx := testutils.CreateTestTransaction(testutils.TestTransactionHash1, 12345)
 	err := suite.db.Create(tx).Error
 	suite.Require().NoError(err)
 
-	event := &models.TransactionEvent{
-		TransactionID: tx.ID,
-		Type:          "gno.land/r/demo/grc20",
-		Func:          "Transfer",
-		PkgPath:       "gno.land/r/demo/grc20",
-	}
+	event := testutils.CreateTestTransactionEvent(tx.ID, testutils.TestEventType)
 
 	err = suite.repo.SaveEvent(event)
 	suite.Assert().NoError(err)
@@ -68,9 +45,9 @@ func (suite *EventRepositoryTestSuite) TestSaveEvent() {
 	err = suite.db.First(&savedEvent, event.ID).Error
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(tx.ID, savedEvent.TransactionID)
-	suite.Assert().Equal("gno.land/r/demo/grc20", savedEvent.Type)
+	suite.Assert().Equal(testutils.TestEventType, savedEvent.Type)
 	suite.Assert().Equal("Transfer", savedEvent.Func)
-	suite.Assert().Equal("gno.land/r/demo/grc20", savedEvent.PkgPath)
+	suite.Assert().Equal(testutils.TestTokenPath, savedEvent.PkgPath)
 }
 
 func (suite *EventRepositoryTestSuite) TestSaveEventAttr() {
@@ -87,20 +64,11 @@ func (suite *EventRepositoryTestSuite) TestSaveEventAttr() {
 	err := suite.db.Create(tx).Error
 	suite.Require().NoError(err)
 
-	event := &models.TransactionEvent{
-		TransactionID: tx.ID,
-		Type:          "gno.land/r/demo/grc20",
-		Func:          "Transfer",
-		PkgPath:       "gno.land/r/demo/grc20",
-	}
+	event := testutils.CreateTestTransactionEvent(tx.ID, testutils.TestEventType)
 	err = suite.db.Create(event).Error
 	suite.Require().NoError(err)
 
-	attr := &models.TransactionEventAttr{
-		EventID: event.ID,
-		Key:     "from",
-		Value:   "g1from123",
-	}
+	attr := testutils.CreateTestTransactionEventAttr(event.ID, "from", testutils.TestAddress1)
 
 	err = suite.repo.SaveEventAttr(attr)
 	suite.Assert().NoError(err)
@@ -112,7 +80,7 @@ func (suite *EventRepositoryTestSuite) TestSaveEventAttr() {
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(event.ID, savedAttr.EventID)
 	suite.Assert().Equal("from", savedAttr.Key)
-	suite.Assert().Equal("g1from123", savedAttr.Value)
+	suite.Assert().Equal(testutils.TestAddress1, savedAttr.Value)
 }
 
 func (suite *EventRepositoryTestSuite) TestSaveMultipleEventAttrs() {
@@ -129,31 +97,14 @@ func (suite *EventRepositoryTestSuite) TestSaveMultipleEventAttrs() {
 	err := suite.db.Create(tx).Error
 	suite.Require().NoError(err)
 
-	event := &models.TransactionEvent{
-		TransactionID: tx.ID,
-		Type:          "gno.land/r/demo/grc20",
-		Func:          "Transfer",
-		PkgPath:       "gno.land/r/demo/grc20",
-	}
+	event := testutils.CreateTestTransactionEvent(tx.ID, testutils.TestEventType)
 	err = suite.db.Create(event).Error
 	suite.Require().NoError(err)
 
 	attrs := []*models.TransactionEventAttr{
-		{
-			EventID: event.ID,
-			Key:     "from",
-			Value:   "g1from123",
-		},
-		{
-			EventID: event.ID,
-			Key:     "to",
-			Value:   "g1to456",
-		},
-		{
-			EventID: event.ID,
-			Key:     "amount",
-			Value:   "1000",
-		},
+		testutils.CreateTestTransactionEventAttr(event.ID, "from", testutils.TestAddress1),
+		testutils.CreateTestTransactionEventAttr(event.ID, "to", testutils.TestAddress2),
+		testutils.CreateTestTransactionEventAttr(event.ID, "amount", "1000"),
 	}
 
 	// Save all attributes
@@ -170,12 +121,7 @@ func (suite *EventRepositoryTestSuite) TestSaveMultipleEventAttrs() {
 }
 
 func (suite *EventRepositoryTestSuite) TestSaveEventWithInvalidTransactionID() {
-	event := &models.TransactionEvent{
-		TransactionID: 999999, // Non-existent transaction ID
-		Type:          "gno.land/r/demo/grc20",
-		Func:          "Transfer",
-		PkgPath:       "gno.land/r/demo/grc20",
-	}
+	event := testutils.CreateTestTransactionEvent(999999, testutils.TestEventType) // Non-existent transaction ID
 
 	// This should succeed in SQLite as it doesn't enforce foreign key constraints by default
 	// In production with PostgreSQL, this would fail
@@ -184,11 +130,7 @@ func (suite *EventRepositoryTestSuite) TestSaveEventWithInvalidTransactionID() {
 }
 
 func (suite *EventRepositoryTestSuite) TestSaveEventAttrWithInvalidEventID() {
-	attr := &models.TransactionEventAttr{
-		EventID: 999999, // Non-existent event ID
-		Key:     "from",
-		Value:   "g1from123",
-	}
+	attr := testutils.CreateTestTransactionEventAttr(999999, "from", testutils.TestAddress1) // Non-existent event ID
 
 	// This should succeed in SQLite as it doesn't enforce foreign key constraints by default
 	// In production with PostgreSQL, this would fail

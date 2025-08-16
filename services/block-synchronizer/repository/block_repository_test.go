@@ -6,10 +6,9 @@ import (
 
 	"shared/infra/database"
 	"shared/models"
+	"shared/testutils"
 
 	"github.com/stretchr/testify/suite"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 type BlockRepositoryTestSuite struct {
@@ -19,32 +18,19 @@ type BlockRepositoryTestSuite struct {
 }
 
 func (suite *BlockRepositoryTestSuite) SetupSuite() {
-	// Use in-memory SQLite database
-	gormDB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	db, err := testutils.SetupInMemoryDB()
 	suite.Require().NoError(err)
-
-	suite.db = &database.Database{DB: gormDB}
-
-	// Create tables
-	err = suite.db.DB.AutoMigrate(&models.Block{})
-	suite.Require().NoError(err)
-
+	
+	suite.db = db
 	suite.repo = NewBlockRepository(suite.db)
 }
 
 func (suite *BlockRepositoryTestSuite) TearDownTest() {
-	// Clean up data after each test
-	suite.db.Exec("DELETE FROM blocks")
+	testutils.CleanupDatabase(suite.db)
 }
 
 func (suite *BlockRepositoryTestSuite) TestSaveBlock() {
-	block := &models.Block{
-		Hash:     "0x123abc",
-		Height:   12345,
-		Time:     time.Now(),
-		NumTxs:   5,
-		TotalTxs: 100,
-	}
+	block := testutils.CreateTestBlock(12345, testutils.TestBlockHash1)
 
 	err := suite.repo.SaveBlock(block)
 	suite.Assert().NoError(err)

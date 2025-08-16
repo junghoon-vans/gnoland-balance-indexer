@@ -8,6 +8,7 @@ import (
 	"block-synchronizer/dto"
 	"shared/infra/graphql"
 	"shared/models"
+	"shared/testutils"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -44,13 +45,11 @@ func (suite *TransactionServiceTestSuite) SetupTest() {
 }
 
 func (suite *TransactionServiceTestSuite) TearDownTest() {
-	suite.transactionRepo.AssertExpectations(suite.T())
-	suite.gqlClient.AssertExpectations(suite.T())
-	suite.eventService.AssertExpectations(suite.T())
+	testutils.AssertMockExpectations(suite.T(), &suite.transactionRepo.Mock, &suite.gqlClient.Mock, &suite.eventService.Mock)
 }
 
 func (suite *TransactionServiceTestSuite) TestProcessTransactions_Success() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	blockHeight := int64(100)
 
 	// Mock GraphQL response
@@ -100,7 +99,7 @@ func (suite *TransactionServiceTestSuite) TestProcessTransactions_Success() {
 }
 
 func (suite *TransactionServiceTestSuite) TestProcessTransactions_GraphQLError() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	blockHeight := int64(100)
 
 	suite.gqlClient.On("Query", mock.AnythingOfType("string"), mock.Anything).Return(&graphql.GraphQLResponse{}, errors.New("graphql error")).Once()
@@ -111,7 +110,7 @@ func (suite *TransactionServiceTestSuite) TestProcessTransactions_GraphQLError()
 }
 
 func (suite *TransactionServiceTestSuite) TestProcessTransaction_Success() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	gqlTx := &dto.GraphQLTransaction{
 		Hash:        "test-hash",
 		Index:       0,
@@ -148,7 +147,7 @@ func (suite *TransactionServiceTestSuite) TestProcessTransaction_Success() {
 }
 
 func (suite *TransactionServiceTestSuite) TestProcessTransaction_SaveError() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	gqlTx := &dto.GraphQLTransaction{
 		Hash:        "test-hash",
 		Index:       0,
@@ -171,7 +170,7 @@ func (suite *TransactionServiceTestSuite) TestProcessTransaction_SaveError() {
 }
 
 func (suite *TransactionServiceTestSuite) TestProcessTransaction_EventProcessingError() {
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	gqlTx := &dto.GraphQLTransaction{
 		Hash:        "test-hash",
 		Index:       0,

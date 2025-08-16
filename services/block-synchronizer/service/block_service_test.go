@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -9,6 +8,7 @@ import (
 	"block-synchronizer/dto"
 	"shared/infra/graphql"
 	"shared/models"
+	"shared/testutils"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -98,10 +98,7 @@ func (suite *BlockServiceTestSuite) SetupTest() {
 }
 
 func (suite *BlockServiceTestSuite) TearDownTest() {
-	suite.blockRepo.AssertExpectations(suite.T())
-	suite.transactionRepo.AssertExpectations(suite.T())
-	suite.eventRepo.AssertExpectations(suite.T())
-	suite.gqlClient.AssertExpectations(suite.T())
+	testutils.AssertMockExpectations(suite.T(), &suite.blockRepo.Mock, &suite.transactionRepo.Mock, &suite.eventRepo.Mock, &suite.gqlClient.Mock)
 }
 
 func (suite *BlockServiceTestSuite) TestGetLatestBlockHeight() {
@@ -140,7 +137,7 @@ func (suite *BlockServiceTestSuite) TestProcessBlock() {
 		return b.Height == 1 && b.Hash == "test-hash"
 	})).Return(nil).Once()
 
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	err := suite.service.ProcessBlock(ctx, gqlBlock)
 	suite.Assert().NoError(err)
 }
@@ -154,7 +151,7 @@ func (suite *BlockServiceTestSuite) TestProcessBlockWithInvalidTime() {
 		TotalTxs: 10,
 	}
 
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	err := suite.service.ProcessBlock(ctx, gqlBlock)
 	suite.Assert().Error(err)
 	suite.Assert().Contains(err.Error(), "parsing time")
@@ -174,7 +171,7 @@ func (suite *BlockServiceTestSuite) TestProcessBlockWithSaveError() {
 		return b.Height == 1
 	})).Return(errors.New("database error")).Once()
 
-	ctx := context.Background()
+	ctx := testutils.CreateTestContext()
 	err := suite.service.ProcessBlock(ctx, gqlBlock)
 	suite.Assert().Error(err)
 	suite.Assert().Contains(err.Error(), "database error")

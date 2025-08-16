@@ -7,6 +7,7 @@ import (
 
 	"shared/infra/queue"
 	"shared/models"
+	"shared/testutils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -50,9 +51,9 @@ func TestTokenEventHandler_ProcessTokenEvent_Success(t *testing.T) {
 		BlockHeight: 100,
 		TxHash:      "hash1",
 		EventID:     1,
-		FromAddress: "g1from",
-		ToAddress:   "g1to",
-		PkgPath:     "gno.land/r/demo/grc20",
+		FromAddress: testutils.TestAddress1,
+		ToAddress:   testutils.TestAddress2,
+		PkgPath:     testutils.TestTokenPath,
 		Amount:      "1000",
 		Func:        "Transfer",
 		Type:        queue.TransferTypeTransfer,
@@ -63,7 +64,7 @@ func TestTokenEventHandler_ProcessTokenEvent_Success(t *testing.T) {
 	// Mock successful balance update
 	mockBalanceService.On("UpdateBalances", mock.Anything, event).Return(nil)
 
-	err := handler.ProcessTokenEvent(context.Background(), event)
+	err := handler.ProcessTokenEvent(testutils.CreateTestContext(), event)
 
 	assert.NoError(t, err)
 	mockTransferRepo.AssertExpectations(t)
@@ -93,9 +94,9 @@ func TestTokenEventHandler_ProcessTokenEvent_SaveTransferError(t *testing.T) {
 		BlockHeight: 100,
 		TxHash:      "hash1",
 		EventID:     1,
-		FromAddress: "g1from",
-		ToAddress:   "g1to",
-		PkgPath:     "gno.land/r/demo/grc20",
+		FromAddress: testutils.TestAddress1,
+		ToAddress:   testutils.TestAddress2,
+		PkgPath:     testutils.TestTokenPath,
 		Amount:      "1000",
 		Func:        "Transfer",
 		Type:        queue.TransferTypeTransfer,
@@ -104,7 +105,7 @@ func TestTokenEventHandler_ProcessTokenEvent_SaveTransferError(t *testing.T) {
 	// Mock transfer save error
 	mockTransferRepo.On("SaveTransfer", mock.AnythingOfType("*models.TokenTransfer")).Return(errors.New("database error"))
 
-	err := handler.ProcessTokenEvent(context.Background(), event)
+	err := handler.ProcessTokenEvent(testutils.CreateTestContext(), event)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to save transfer")
@@ -123,9 +124,9 @@ func TestTokenEventHandler_ProcessTokenEvent_UpdateBalancesError(t *testing.T) {
 		BlockHeight: 100,
 		TxHash:      "hash1",
 		EventID:     1,
-		FromAddress: "g1from",
-		ToAddress:   "g1to",
-		PkgPath:     "gno.land/r/demo/grc20",
+		FromAddress: testutils.TestAddress1,
+		ToAddress:   testutils.TestAddress2,
+		PkgPath:     testutils.TestTokenPath,
 		Amount:      "1000",
 		Func:        "Transfer",
 		Type:        queue.TransferTypeTransfer,
@@ -136,7 +137,7 @@ func TestTokenEventHandler_ProcessTokenEvent_UpdateBalancesError(t *testing.T) {
 	// Mock balance update error
 	mockBalanceService.On("UpdateBalances", mock.Anything, event).Return(errors.New("balance update error"))
 
-	err := handler.ProcessTokenEvent(context.Background(), event)
+	err := handler.ProcessTokenEvent(testutils.CreateTestContext(), event)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to update balances")
@@ -154,8 +155,8 @@ func TestTokenEventHandler_ProcessTokenEvent_MintEvent(t *testing.T) {
 		BlockHeight: 100,
 		TxHash:      "hash1",
 		EventID:     1,
-		ToAddress:   "g1to",
-		PkgPath:     "gno.land/r/demo/grc20",
+		ToAddress:   testutils.TestAddress2,
+		PkgPath:     testutils.TestTokenPath,
 		Amount:      "1000",
 		Func:        "Mint",
 		Type:        queue.TransferTypeMint,
@@ -164,7 +165,7 @@ func TestTokenEventHandler_ProcessTokenEvent_MintEvent(t *testing.T) {
 	mockTransferRepo.On("SaveTransfer", mock.AnythingOfType("*models.TokenTransfer")).Return(nil)
 	mockBalanceService.On("UpdateBalances", mock.Anything, event).Return(nil)
 
-	err := handler.ProcessTokenEvent(context.Background(), event)
+	err := handler.ProcessTokenEvent(testutils.CreateTestContext(), event)
 
 	assert.NoError(t, err)
 	mockTransferRepo.AssertExpectations(t)

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"shared/testutils"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,8 +34,8 @@ func TestProcessorService_Start_Success(t *testing.T) {
 	mockMsgProcessor := &MockMessageProcessor{}
 	service := NewProcessorService(mockMsgProcessor)
 
-	// Create a context that will be cancelled after enough time for at least one tick
-	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+	// Create a test context that will be cancelled after enough time for at least one tick
+	ctx, cancel := context.WithTimeout(testutils.CreateTestContext(), 6*time.Second)
 	defer cancel()
 
 	// Mock successful message processing
@@ -53,8 +55,8 @@ func TestProcessorService_Start_ProcessingError(t *testing.T) {
 	mockMsgProcessor := &MockMessageProcessor{}
 	service := NewProcessorService(mockMsgProcessor)
 
-	// Create a context that will be cancelled after enough time for at least one tick
-	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+	// Create a test context that will be cancelled after enough time for at least one tick
+	ctx, cancel := context.WithTimeout(testutils.CreateTestContext(), 6*time.Second)
 	defer cancel()
 
 	// Mock message processing error
@@ -73,8 +75,8 @@ func TestProcessorService_Start_ContextCancellation(t *testing.T) {
 	mockMsgProcessor := &MockMessageProcessor{}
 	service := NewProcessorService(mockMsgProcessor)
 
-	// Create a context that will be cancelled immediately
-	ctx, cancel := context.WithCancel(context.Background())
+	// Create a test context that will be cancelled immediately
+	ctx, cancel := context.WithCancel(testutils.CreateTestContext())
 	cancel() // Cancel immediately
 
 	err := service.Start(ctx)
