@@ -86,7 +86,7 @@ CREATE INDEX IF NOT EXISTS idx_transaction_events_transaction_id ON transaction_
 CREATE INDEX IF NOT EXISTS idx_transaction_event_attrs_event_id ON transaction_event_attrs(event_id);
 
 -- Create unique constraint for token balances
-CREATE UNIQUE INDEX IF NOT EXISTS idx_token_balance_address_token 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_token_balance_address_token
 ON token_balances (address, token_path);
 
 -- Create indexes for token transfers
@@ -114,7 +114,7 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_blocks_updated_at BEFORE UPDATE ON blocks
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions  
+CREATE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_token_balances_updated_at BEFORE UPDATE ON token_balances

@@ -17,7 +17,7 @@ graph TB
     PG[(PostgreSQL)]
     SQS[SQS Queue]
     REDIS[(Redis)]
-    
+
     GQL --> BS
     BS --> |Blocks & Transaction|PG
     BS --> |Token Events| SQS
@@ -25,7 +25,7 @@ graph TB
     EP --> |Token Balance|PG
     API --> PG
     API --> REDIS
-    
+
     class BS,EP,API service
     class PG,SQS,REDIS,GQL data
 ```
@@ -62,15 +62,28 @@ curl http://localhost:8080/tokens/balances
 ### Prerequisites
 - Go 1.21+
 - Docker & Docker Compose
+- pre-commit (optional, for git hooks)
+
+### Setup
+```bash
+# Install pre-commit hooks (optional but recommended)
+make setup-hooks
+
+# Run all checks
+make check
+```
 
 ### Build and Test
 ```bash
-make help
+make help        # Show all available commands
 
-make test # Run all tests
-make build # Build all services
-make fmt # Format and lint code
-make clean # Clean up
+make test        # Run all tests
+make build       # Build all services
+make fmt         # Format code
+make vet         # Run go vet
+make clean       # Clean up
+
+make pre-commit  # Run pre-commit checks manually
 ```
 
 ## API Endpoints

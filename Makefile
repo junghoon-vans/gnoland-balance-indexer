@@ -1,4 +1,4 @@
-.PHONY: help test build tidy fmt vet lint clean
+.PHONY: help test build tidy fmt vet lint clean check setup-hooks pre-commit
 
 # Default target
 help: ## Show this help message
@@ -41,3 +41,11 @@ clean: ## Clean build artifacts and test cache
 	rm -rf bin/
 	go clean -testcache
 	go clean -cache
+
+setup-hooks: ## Install pre-commit hooks
+	@echo "Installing pre-commit hooks..."
+	pre-commit install
+
+pre-commit: ## Run pre-commit on all files
+	@echo "Running pre-commit checks..."
+	pre-commit run --all-files
