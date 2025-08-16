@@ -10,6 +10,7 @@ import (
 	"balance-api/repository"
 	"balance-api/router"
 	"balance-api/service"
+	"shared/infra/cache"
 	"shared/infra/database"
 )
 
@@ -21,13 +22,20 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
+	// Initialize Redis cache
+	redisCache, err := cache.NewRedisCache()
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
+	defer redisCache.Close()
+
 	// Initialize repositories
 	balanceRepo := repository.NewBalanceRepository(db)
 	transferRepo := repository.NewTransferRepository(db)
 
 	// Initialize services
-	balanceService := service.NewBalanceService(balanceRepo)
-	transferService := service.NewTransferService(transferRepo)
+	balanceService := service.NewBalanceService(balanceRepo, redisCache)
+	transferService := service.NewTransferService(transferRepo, redisCache)
 
 	// Initialize handlers
 	balanceHandler := handler.NewBalanceHandler(balanceService)

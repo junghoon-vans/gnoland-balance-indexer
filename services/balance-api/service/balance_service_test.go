@@ -1,10 +1,13 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"balance-api/dto"
+	"shared/infra/cache"
 	"shared/models"
 
 	"github.com/stretchr/testify/assert"
@@ -37,15 +40,55 @@ func (m *MockBalanceRepository) GetBalancesByTokenPathAndAddress(tokenPath, addr
 	return args.Get(0).([]models.TokenBalance), args.Error(1)
 }
 
+// MockCache is a mock implementation of Cache
+type MockCache struct {
+	mock.Mock
+}
+
+func (m *MockCache) Get(ctx context.Context, key string, dest interface{}) error {
+	args := m.Called(ctx, key, dest)
+	return args.Error(0)
+}
+
+func (m *MockCache) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+	args := m.Called(ctx, key, value, ttl)
+	return args.Error(0)
+}
+
+func (m *MockCache) Delete(ctx context.Context, key string) error {
+	args := m.Called(ctx, key)
+	return args.Error(0)
+}
+
+func (m *MockCache) DeletePattern(ctx context.Context, pattern string) error {
+	args := m.Called(ctx, pattern)
+	return args.Error(0)
+}
+
+func (m *MockCache) Exists(ctx context.Context, key string) (bool, error) {
+	args := m.Called(ctx, key)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockCache) Close() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func TestBalanceService_GetTokenBalances_WithAddress(t *testing.T) {
 	mockRepo := new(MockBalanceRepository)
-	service := NewBalanceService(mockRepo)
+	mockCache := new(MockCache)
+	service := NewBalanceService(mockRepo, mockCache)
 
 	// Test data
 	balances := []models.TokenBalance{
 		{Address: "g1abcdefghijklmnopqrstuvwxyz1234567890ab", TokenPath: "gno.land/r/demo/grc20", Amount: "1000"},
 		{Address: "g1abcdefghijklmnopqrstuvwxyz1234567890ab", TokenPath: "gno.land/r/demo/grc21", Amount: "2000"},
 	}
+
+	// Mock cache miss
+	mockCache.On("Get", mock.Anything, "balance:address:g1abcdefghijklmnopqrstuvwxyz1234567890ab", mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, "balance:address:g1abcdefghijklmnopqrstuvwxyz1234567890ab", mock.Anything, mock.Anything).Return(nil)
 
 	mockRepo.On("GetBalancesByAddress", "g1abcdefghijklmnopqrstuvwxyz1234567890ab").Return(balances, nil)
 
@@ -65,7 +108,11 @@ func TestBalanceService_GetTokenBalances_WithAddress(t *testing.T) {
 
 func TestBalanceService_GetTokenBalances_WithInvalidAddress(t *testing.T) {
 	mockRepo := new(MockBalanceRepository)
-	service := NewBalanceService(mockRepo)
+	mockCache := new(MockCache)
+	// Mock cache miss for simplicity in tests
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewBalanceService(mockRepo, mockCache)
 
 	req := dto.BalanceRequest{Address: "invalid_address"}
 	response, err := service.GetTokenBalances(req)
@@ -79,7 +126,11 @@ func TestBalanceService_GetTokenBalances_WithInvalidAddress(t *testing.T) {
 
 func TestBalanceService_GetTokenBalances_WithoutAddress(t *testing.T) {
 	mockRepo := new(MockBalanceRepository)
-	service := NewBalanceService(mockRepo)
+	mockCache := new(MockCache)
+	// Mock cache miss for simplicity in tests
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewBalanceService(mockRepo, mockCache)
 
 	// Test data - multiple balances for same token path
 	balances := []models.TokenBalance{
@@ -111,7 +162,11 @@ func TestBalanceService_GetTokenBalances_WithoutAddress(t *testing.T) {
 
 func TestBalanceService_GetTokenBalances_RepositoryError(t *testing.T) {
 	mockRepo := new(MockBalanceRepository)
-	service := NewBalanceService(mockRepo)
+	mockCache := new(MockCache)
+	// Mock cache miss for simplicity in tests
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewBalanceService(mockRepo, mockCache)
 
 	mockRepo.On("GetBalancesByAddress", "g1abcdefghijklmnopqrstuvwxyz1234567890ab").Return([]models.TokenBalance{}, errors.New("database error"))
 
@@ -127,7 +182,11 @@ func TestBalanceService_GetTokenBalances_RepositoryError(t *testing.T) {
 
 func TestBalanceService_GetTokenBalancesByPath_WithAddress(t *testing.T) {
 	mockRepo := new(MockBalanceRepository)
-	service := NewBalanceService(mockRepo)
+	mockCache := new(MockCache)
+	// Mock cache miss for simplicity in tests
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewBalanceService(mockRepo, mockCache)
 
 	// Test data
 	balances := []models.TokenBalance{
@@ -150,7 +209,11 @@ func TestBalanceService_GetTokenBalancesByPath_WithAddress(t *testing.T) {
 
 func TestBalanceService_GetTokenBalancesByPath_WithoutAddress(t *testing.T) {
 	mockRepo := new(MockBalanceRepository)
-	service := NewBalanceService(mockRepo)
+	mockCache := new(MockCache)
+	// Mock cache miss for simplicity in tests
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewBalanceService(mockRepo, mockCache)
 
 	// Test data
 	balances := []models.TokenBalance{
@@ -173,7 +236,11 @@ func TestBalanceService_GetTokenBalancesByPath_WithoutAddress(t *testing.T) {
 
 func TestBalanceService_GetTokenBalancesByPath_WithURLEncodedPath(t *testing.T) {
 	mockRepo := new(MockBalanceRepository)
-	service := NewBalanceService(mockRepo)
+	mockCache := new(MockCache)
+	// Mock cache miss for simplicity in tests
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewBalanceService(mockRepo, mockCache)
 
 	// Test data
 	balances := []models.TokenBalance{
@@ -196,7 +263,11 @@ func TestBalanceService_GetTokenBalancesByPath_WithURLEncodedPath(t *testing.T) 
 
 func TestBalanceService_GetTokenBalancesByPath_WithInvalidAddress(t *testing.T) {
 	mockRepo := new(MockBalanceRepository)
-	service := NewBalanceService(mockRepo)
+	mockCache := new(MockCache)
+	// Mock cache miss for simplicity in tests
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewBalanceService(mockRepo, mockCache)
 
 	response, err := service.GetTokenBalancesByPath("gno.land/r/demo/grc20", "invalid_address")
 
@@ -209,7 +280,11 @@ func TestBalanceService_GetTokenBalancesByPath_WithInvalidAddress(t *testing.T) 
 
 func TestBalanceService_GetTokenBalancesByPath_RepositoryError(t *testing.T) {
 	mockRepo := new(MockBalanceRepository)
-	service := NewBalanceService(mockRepo)
+	mockCache := new(MockCache)
+	// Mock cache miss for simplicity in tests
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewBalanceService(mockRepo, mockCache)
 
 	mockRepo.On("GetBalancesByTokenPath", "gno.land/r/demo/grc20").Return([]models.TokenBalance{}, errors.New("database error"))
 

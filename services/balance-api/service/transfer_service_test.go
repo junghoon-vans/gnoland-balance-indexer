@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"balance-api/dto"
+	"shared/infra/cache"
 	"shared/models"
 
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,10 @@ func (m *MockTransferRepository) GetAllTransfers(limit int) ([]models.TokenTrans
 
 func TestTransferService_GetTransferHistory_WithAddress(t *testing.T) {
 	mockRepo := new(MockTransferRepository)
-	service := NewTransferService(mockRepo)
+	mockCache := new(MockCache)
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewTransferService(mockRepo, mockCache)
 
 	// Test data
 	now := time.Now()
@@ -69,7 +73,10 @@ func TestTransferService_GetTransferHistory_WithAddress(t *testing.T) {
 
 func TestTransferService_GetTransferHistory_WithAddressAndLimit(t *testing.T) {
 	mockRepo := new(MockTransferRepository)
-	service := NewTransferService(mockRepo)
+	mockCache := new(MockCache)
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewTransferService(mockRepo, mockCache)
 
 	// Test data
 	transfers := []models.TokenTransfer{
@@ -97,7 +104,10 @@ func TestTransferService_GetTransferHistory_WithAddressAndLimit(t *testing.T) {
 
 func TestTransferService_GetTransferHistory_WithInvalidAddress(t *testing.T) {
 	mockRepo := new(MockTransferRepository)
-	service := NewTransferService(mockRepo)
+	mockCache := new(MockCache)
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewTransferService(mockRepo, mockCache)
 
 	req := dto.TransferHistoryRequest{Address: "invalid_address", Limit: 10}
 	response, err := service.GetTransferHistory(req)
@@ -111,7 +121,10 @@ func TestTransferService_GetTransferHistory_WithInvalidAddress(t *testing.T) {
 
 func TestTransferService_GetTransferHistory_WithoutAddress(t *testing.T) {
 	mockRepo := new(MockTransferRepository)
-	service := NewTransferService(mockRepo)
+	mockCache := new(MockCache)
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewTransferService(mockRepo, mockCache)
 
 	// Test data
 	transfers := []models.TokenTransfer{
@@ -147,7 +160,10 @@ func TestTransferService_GetTransferHistory_WithoutAddress(t *testing.T) {
 
 func TestTransferService_GetTransferHistory_WithoutAddressAndLimit(t *testing.T) {
 	mockRepo := new(MockTransferRepository)
-	service := NewTransferService(mockRepo)
+	mockCache := new(MockCache)
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewTransferService(mockRepo, mockCache)
 
 	// Test data
 	transfers := []models.TokenTransfer{
@@ -175,7 +191,10 @@ func TestTransferService_GetTransferHistory_WithoutAddressAndLimit(t *testing.T)
 
 func TestTransferService_GetTransferHistory_RepositoryError_WithAddress(t *testing.T) {
 	mockRepo := new(MockTransferRepository)
-	service := NewTransferService(mockRepo)
+	mockCache := new(MockCache)
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewTransferService(mockRepo, mockCache)
 
 	mockRepo.On("GetTransfersByAddress", "g1abcdefghijklmnopqrstuvwxyz1234567890ab", 1000).Return([]models.TokenTransfer{}, errors.New("database error"))
 
@@ -191,7 +210,10 @@ func TestTransferService_GetTransferHistory_RepositoryError_WithAddress(t *testi
 
 func TestTransferService_GetTransferHistory_RepositoryError_WithoutAddress(t *testing.T) {
 	mockRepo := new(MockTransferRepository)
-	service := NewTransferService(mockRepo)
+	mockCache := new(MockCache)
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewTransferService(mockRepo, mockCache)
 
 	mockRepo.On("GetAllTransfers", 1000).Return([]models.TokenTransfer{}, errors.New("database error"))
 
@@ -207,7 +229,10 @@ func TestTransferService_GetTransferHistory_RepositoryError_WithoutAddress(t *te
 
 func TestTransferService_GetTransferHistory_NegativeLimit(t *testing.T) {
 	mockRepo := new(MockTransferRepository)
-	service := NewTransferService(mockRepo)
+	mockCache := new(MockCache)
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewTransferService(mockRepo, mockCache)
 
 	// Test data
 	transfers := []models.TokenTransfer{
@@ -235,7 +260,10 @@ func TestTransferService_GetTransferHistory_NegativeLimit(t *testing.T) {
 
 func TestTransferService_GetTransferHistory_EmptyResult(t *testing.T) {
 	mockRepo := new(MockTransferRepository)
-	service := NewTransferService(mockRepo)
+	mockCache := new(MockCache)
+	mockCache.On("Get", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(cache.ErrCacheMiss)
+	mockCache.On("Set", mock.Anything, mock.AnythingOfType("string"), mock.Anything, mock.Anything).Return(nil)
+	service := NewTransferService(mockRepo, mockCache)
 
 	mockRepo.On("GetTransfersByAddress", "g1abcdefghijklmnopqrstuvwxyz1234567890ab", 1000).Return([]models.TokenTransfer{}, nil)
 
