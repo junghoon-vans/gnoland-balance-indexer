@@ -27,10 +27,6 @@ func main() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	if err := db.CreateUniqueIndexes(); err != nil {
-		log.Fatalf("Failed to create indexes: %v", err)
-	}
-
 	sqsClient, err := queue.NewSQSClient()
 	if err != nil {
 		log.Fatalf("Failed to create SQS client: %v", err)

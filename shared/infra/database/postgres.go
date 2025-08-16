@@ -57,28 +57,3 @@ func (d *Database) AutoMigrate() error {
 		&models.TokenTransfer{},
 	)
 }
-
-func (d *Database) CreateUniqueIndexes() error {
-	log.Println("Creating unique indexes...")
-
-	queries := []string{
-		`CREATE UNIQUE INDEX IF NOT EXISTS idx_token_balance_address_token 
-		 ON token_balances (address, token_path)`,
-		`CREATE INDEX IF NOT EXISTS idx_token_transfers_from_address 
-		 ON token_transfers (from_address)`,
-		`CREATE INDEX IF NOT EXISTS idx_token_transfers_to_address 
-		 ON token_transfers (to_address)`,
-		`CREATE INDEX IF NOT EXISTS idx_token_transfers_token_path 
-		 ON token_transfers (token_path)`,
-		`CREATE INDEX IF NOT EXISTS idx_transaction_events_block_height 
-		 ON transaction_events (transaction_id)`,
-	}
-
-	for _, query := range queries {
-		if err := d.DB.Exec(query).Error; err != nil {
-			return fmt.Errorf("failed to create index: %w", err)
-		}
-	}
-
-	return nil
-}

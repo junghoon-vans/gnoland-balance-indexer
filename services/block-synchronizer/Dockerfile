@@ -2,9 +2,6 @@ FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-# Copy go.work and go.work.sum for workspace
-COPY go.work go.work.sum ./
-
 # Copy shared module
 COPY shared/ ./shared/
 

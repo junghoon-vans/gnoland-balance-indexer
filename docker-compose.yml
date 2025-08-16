@@ -61,6 +61,21 @@ services:
       - services/block-synchronizer/config/.env.example
     restart: unless-stopped
 
+  event-processor:
+    build:
+      context: .
+      dockerfile: services/event-processor/Dockerfile
+    env_file:
+      - services/event-processor/config/.env.example
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack-setup:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+
 volumes:
   postgres_data:
   localstack_data:
