@@ -9,7 +9,7 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init:/docker-entrypoint-initdb.d
+      - ./shared/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U indexer -d gno_indexer"]
       interval: 10s
@@ -51,14 +51,14 @@ services:
   block-synchronizer:
     build:
       context: .
-      dockerfile: cmd/block-synchronizer/Dockerfile
+      dockerfile: services/block-synchronizer/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
       localstack-setup:
         condition: service_completed_successfully
     env_file:
-      - cmd/block-synchronizer/config/.env.example
+      - services/block-synchronizer/config/.env.example
     restart: unless-stopped
 
 volumes:

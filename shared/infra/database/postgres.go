@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"gnoland-balance-indexer/pkg/models"
+	"shared/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

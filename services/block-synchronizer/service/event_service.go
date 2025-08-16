@@ -10,8 +10,8 @@ import (
 
 	"block-synchronizer/dto"
 	"block-synchronizer/repository"
-	"gnoland-balance-indexer/pkg/models"
-	"gnoland-balance-indexer/pkg/queue"
+	"shared/infra/queue"
+	"shared/models"
 )
 
 type EventService interface {

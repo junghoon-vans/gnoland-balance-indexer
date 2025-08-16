@@ -9,8 +9,8 @@ import (
 
 	"block-synchronizer/dto"
 	"block-synchronizer/repository"
-	"gnoland-balance-indexer/pkg/graphql"
-	"gnoland-balance-indexer/pkg/models"
+	"shared/infra/graphql"
+	"shared/models"
 )
 
 type GraphQLClientInterface interface {

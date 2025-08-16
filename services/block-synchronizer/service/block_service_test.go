@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"block-synchronizer/dto"
-	"gnoland-balance-indexer/pkg/graphql"
-	"gnoland-balance-indexer/pkg/models"
+	"shared/infra/graphql"
+	"shared/models"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"

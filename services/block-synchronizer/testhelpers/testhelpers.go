@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"block-synchronizer/dto"
-	"gnoland-balance-indexer/pkg/database"
-	"gnoland-balance-indexer/pkg/models"
+	"shared/infra/database"
+	"shared/models"
 
 	"github.com/stretchr/testify/mock"
 	"gorm.io/driver/sqlite"

@@ -7,8 +7,9 @@ import (
 	"testing"
 
 	"block-synchronizer/dto"
-	"gnoland-balance-indexer/pkg/models"
-	"gnoland-balance-indexer/pkg/queue"
+	"shared/infra/queue"
+	"shared/models"
+
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )

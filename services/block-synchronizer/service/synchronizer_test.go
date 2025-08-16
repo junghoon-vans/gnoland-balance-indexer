@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"block-synchronizer/dto"
-	"gnoland-balance-indexer/pkg/models"
+	"shared/models"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"

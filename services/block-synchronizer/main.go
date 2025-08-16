@@ -10,9 +10,9 @@ import (
 
 	"block-synchronizer/repository"
 	"block-synchronizer/service"
-	"gnoland-balance-indexer/pkg/database"
-	"gnoland-balance-indexer/pkg/graphql"
-	"gnoland-balance-indexer/pkg/queue"
+	"shared/infra/database"
+	"shared/infra/graphql"
+	"shared/infra/queue"
 )
 
 func main() {

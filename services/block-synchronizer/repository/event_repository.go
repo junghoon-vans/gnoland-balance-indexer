@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"gnoland-balance-indexer/pkg/database"
-	"gnoland-balance-indexer/pkg/models"
+	"shared/infra/database"
+	"shared/models"
 )
 
 type EventRepository interface {

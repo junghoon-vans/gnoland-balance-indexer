@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"gnoland-balance-indexer/pkg/database"
-	"gnoland-balance-indexer/pkg/models"
+	"shared/infra/database"
+	"shared/models"
 
 	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/sqlite"

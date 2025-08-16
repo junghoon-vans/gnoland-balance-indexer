@@ -8,7 +8,7 @@ import (
 
 	"block-synchronizer/dto"
 	"block-synchronizer/repository"
-	"gnoland-balance-indexer/pkg/models"
+	"shared/models"
 )
 
 type TransactionService interface {
