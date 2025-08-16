@@ -61,13 +61,20 @@ func (s *synchronizerService) Start(ctx context.Context) error {
 func (s *synchronizerService) initializeLastHeight() error {
 	lastBlock, err := s.blockRepo.GetLastBlock()
 	if err != nil {
+		// Start from block height 0 so backfill starts from 1
 		s.lastHeight = 0
-		log.Println("No blocks found in database, starting from height 0")
+		log.Printf("No blocks found in database, starting from height 1")
 		return nil
 	}
 
-	s.lastHeight = lastBlock.Height
-	log.Printf("Last synced block height: %d", s.lastHeight)
+	// Start from block height 0 if no previous blocks
+	if lastBlock.Height < 1 {
+		s.lastHeight = 0
+		log.Printf("Starting from height 1")
+	} else {
+		s.lastHeight = lastBlock.Height
+		log.Printf("Last synced block height: %d", s.lastHeight)
+	}
 	return nil
 }
 

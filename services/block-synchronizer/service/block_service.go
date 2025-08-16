@@ -24,10 +24,11 @@ type BlockService interface {
 }
 
 type blockService struct {
-	blockRepo       repository.BlockRepository
-	transactionRepo repository.TransactionRepository
-	eventRepo       repository.EventRepository
-	gqlClient       GraphQLClientInterface
+	blockRepo          repository.BlockRepository
+	transactionRepo    repository.TransactionRepository
+	eventRepo          repository.EventRepository
+	gqlClient          GraphQLClientInterface
+	transactionService TransactionService
 }
 
 func NewBlockService(
@@ -35,12 +36,14 @@ func NewBlockService(
 	transactionRepo repository.TransactionRepository,
 	eventRepo repository.EventRepository,
 	gqlClient GraphQLClientInterface,
+	transactionService TransactionService,
 ) BlockService {
 	return &blockService{
-		blockRepo:       blockRepo,
-		transactionRepo: transactionRepo,
-		eventRepo:       eventRepo,
-		gqlClient:       gqlClient,
+		blockRepo:          blockRepo,
+		transactionRepo:    transactionRepo,
+		eventRepo:          eventRepo,
+		gqlClient:          gqlClient,
+		transactionService: transactionService,
 	}
 }
 
@@ -126,6 +129,15 @@ func (s *blockService) ProcessBlock(ctx context.Context, gqlBlock *dto.GraphQLBl
 
 	if err := s.blockRepo.SaveBlock(block); err != nil {
 		return fmt.Errorf("failed to save block: %w", err)
+	}
+
+	// Process transactions for this block
+	log.Printf("Processing transactions for block %d (num_txs: %d)", gqlBlock.Height, gqlBlock.NumTxs)
+	if err := s.transactionService.ProcessTransactions(ctx, gqlBlock.Height); err != nil {
+		log.Printf("Error processing transactions for block %d: %v", gqlBlock.Height, err)
+		// Don't return error here to continue processing other blocks
+	} else {
+		log.Printf("Successfully processed transactions for block %d", gqlBlock.Height)
 	}
 
 	log.Printf("Saved block: %d", block.Height)

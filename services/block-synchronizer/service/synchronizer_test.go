@@ -80,10 +80,10 @@ func (suite *SynchronizerServiceTestSuite) TestStart_WithNoExistingBlocks() {
 	suite.blockRepo.On("GetLastBlock").Return((*models.Block)(nil), errors.New("no blocks found")).Once()
 
 	// Mock GetLatestBlockHeight for backfill
-	suite.blockService.On("GetLatestBlockHeight").Return(int64(10), nil).Maybe()
+	suite.blockService.On("GetLatestBlockHeight").Return(int64(10), nil).Once()
 
 	// Mock SyncBlockRange for backfill
-	suite.blockService.On("SyncBlockRange", ctx, int64(1), int64(10)).Return(nil).Maybe()
+	suite.blockService.On("SyncBlockRange", mock.Anything, int64(1), int64(10)).Return(nil).Once()
 
 	err := suite.service.Start(ctx)
 	suite.Assert().NoError(err)
@@ -97,10 +97,10 @@ func (suite *SynchronizerServiceTestSuite) TestStart_BackfillError() {
 	suite.blockRepo.On("GetLastBlock").Return((*models.Block)(nil), errors.New("no blocks found")).Once()
 
 	// Mock GetLatestBlockHeight for backfill
-	suite.blockService.On("GetLatestBlockHeight").Return(int64(10), nil).Maybe()
+	suite.blockService.On("GetLatestBlockHeight").Return(int64(10), nil).Once()
 
 	// Mock SyncBlockRange error for backfill
-	suite.blockService.On("SyncBlockRange", ctx, int64(1), int64(10)).Return(errors.New("sync error")).Maybe()
+	suite.blockService.On("SyncBlockRange", mock.Anything, int64(1), int64(10)).Return(errors.New("sync error")).Once()
 
 	// Should continue despite backfill error
 	err := suite.service.Start(ctx)

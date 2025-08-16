@@ -38,13 +38,10 @@ func main() {
 	// Initialize services
 	eventService := service.NewEventService(eventRepo, sqsClient)
 	transactionService := service.NewTransactionService(transactionRepo, gqlClient, eventService)
-	blockService := service.NewBlockService(blockRepo, transactionRepo, eventRepo, gqlClient)
+	blockService := service.NewBlockService(blockRepo, transactionRepo, eventRepo, gqlClient, transactionService)
 
 	// Initialize synchronizer service
 	synchronizerService := service.NewSynchronizerService(blockRepo, blockService)
-
-	// Use transactionService to avoid unused variable error
-	_ = transactionService
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

@@ -92,6 +92,26 @@ func (s *eventService) isValidAddress(addr string) bool {
 	return matched
 }
 
+func (s *eventService) getTransferType(funcName, fromAddr, toAddr string) string {
+	switch funcName {
+	case "Mint":
+		return queue.TransferTypeMint
+	case "Burn":
+		return queue.TransferTypeBurn
+	case "Transfer":
+		return queue.TransferTypeTransfer
+	default:
+		// Default logic based on addresses
+		if fromAddr == "" {
+			return queue.TransferTypeMint
+		} else if toAddr == "" {
+			return queue.TransferTypeBurn
+		} else {
+			return queue.TransferTypeTransfer
+		}
+	}
+}
+
 func (s *eventService) sendTokenEventToQueue(ctx context.Context, gqlTx *dto.GraphQLTransaction, event *models.TransactionEvent, attrs map[string]string) error {
 	fromAddr := attrs["from"]
 	toAddr := attrs["to"]
@@ -109,12 +129,15 @@ func (s *eventService) sendTokenEventToQueue(ctx context.Context, gqlTx *dto.Gra
 		return fmt.Errorf("invalid to address: %s", toAddr)
 	}
 
+	// Determine transfer type based on function name and addresses
+	transferType := s.getTransferType(event.Func, fromAddr, toAddr)
+
 	tokenEvent := &queue.TokenEvent{
 		ID:          fmt.Sprintf("%s-%d", gqlTx.Hash, event.ID),
 		BlockHeight: gqlTx.BlockHeight,
 		TxHash:      gqlTx.Hash,
 		EventID:     event.ID,
-		Type:        event.Type,
+		Type:        transferType,
 		Func:        event.Func,
 		PkgPath:     event.PkgPath,
 		FromAddress: fromAddr,

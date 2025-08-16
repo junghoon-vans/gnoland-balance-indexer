@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -64,6 +65,20 @@ func (m *MockEventService) ProcessEvent(event *models.TransactionEvent) error {
 	return args.Error(0)
 }
 
+type MockTransactionService struct {
+	mock.Mock
+}
+
+func (m *MockTransactionService) ProcessTransactions(ctx context.Context, blockHeight int64) error {
+	args := m.Called(ctx, blockHeight)
+	return args.Error(0)
+}
+
+func (m *MockTransactionService) ProcessTransaction(ctx context.Context, gqlTx *dto.GraphQLTransaction) error {
+	args := m.Called(ctx, gqlTx)
+	return args.Error(0)
+}
+
 type MockGraphQLClient struct {
 	mock.Mock
 }
@@ -76,11 +91,12 @@ func (m *MockGraphQLClient) Query(query string, variables map[string]interface{}
 // Test suite
 type BlockServiceTestSuite struct {
 	suite.Suite
-	blockRepo       *MockBlockRepository
-	transactionRepo *MockTransactionRepository
-	eventRepo       *MockEventRepository
-	gqlClient       *MockGraphQLClient
-	service         BlockService
+	blockRepo          *MockBlockRepository
+	transactionRepo    *MockTransactionRepository
+	eventRepo          *MockEventRepository
+	gqlClient          *MockGraphQLClient
+	transactionService *MockTransactionService
+	service            BlockService
 }
 
 func (suite *BlockServiceTestSuite) SetupTest() {
@@ -88,12 +104,14 @@ func (suite *BlockServiceTestSuite) SetupTest() {
 	suite.transactionRepo = new(MockTransactionRepository)
 	suite.eventRepo = new(MockEventRepository)
 	suite.gqlClient = new(MockGraphQLClient)
+	suite.transactionService = new(MockTransactionService)
 
 	suite.service = NewBlockService(
 		suite.blockRepo,
 		suite.transactionRepo,
 		suite.eventRepo,
 		suite.gqlClient,
+		suite.transactionService,
 	)
 }
 
@@ -136,6 +154,7 @@ func (suite *BlockServiceTestSuite) TestProcessBlock() {
 	suite.blockRepo.On("SaveBlock", mock.MatchedBy(func(b *models.Block) bool {
 		return b.Height == 1 && b.Hash == "test-hash"
 	})).Return(nil).Once()
+	suite.transactionService.On("ProcessTransactions", mock.Anything, int64(1)).Return(nil).Once()
 
 	ctx := testutils.CreateTestContext()
 	err := suite.service.ProcessBlock(ctx, gqlBlock)
