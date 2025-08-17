@@ -18,17 +18,11 @@ import (
 type CacheConfig struct {
 	TTL          time.Duration
 	KeyGenerator func(*gin.Context) string
-	ShouldCache  func(*gin.Context) bool
 }
 
 // CacheMiddleware creates a caching middleware with the given configuration
 func CacheMiddleware(cache sharedcache.Cache, config CacheConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Skip caching if condition not met
-		if config.ShouldCache != nil && !config.ShouldCache(c) {
-			c.Next()
-			return
-		}
 
 		// Generate cache key
 		cacheKey := config.KeyGenerator(c)
@@ -96,9 +90,6 @@ var (
 			address := c.Query("address")
 			return cache.GenerateBalanceAddressKey(address)
 		},
-		ShouldCache: func(c *gin.Context) bool {
-			return c.Request.Method == "GET"
-		},
 	}
 
 	// BalanceTokenConfig caches token balance responses
@@ -114,9 +105,6 @@ var (
 			}
 			address := c.Query("address")
 			return cache.GenerateBalanceTokenKey(tokenPath, address)
-		},
-		ShouldCache: func(c *gin.Context) bool {
-			return c.Request.Method == "GET"
 		},
 	}
 
@@ -134,9 +122,6 @@ var (
 				}
 			}
 			return cache.GenerateTransferKey(address, limit)
-		},
-		ShouldCache: func(c *gin.Context) bool {
-			return c.Request.Method == "GET"
 		},
 	}
 )
