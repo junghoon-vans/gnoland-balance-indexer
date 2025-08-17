@@ -39,24 +39,35 @@ func (m *MockSQSClient) SendMessage(ctx context.Context, queueURL string, messag
 	return args.Error(0)
 }
 
+type MockTransferRepository struct {
+	mock.Mock
+}
+
+func (m *MockTransferRepository) SaveTransfer(transfer *models.TokenTransfer) error {
+	args := m.Called(transfer)
+	return args.Error(0)
+}
+
 // Test suite for EventService
 type EventServiceTestSuite struct {
 	suite.Suite
-	eventRepo *MockEventRepositoryForService
-	sqsClient *MockSQSClient
-	service   EventService
+	eventRepo    *MockEventRepositoryForService
+	transferRepo *MockTransferRepository
+	sqsClient    *MockSQSClient
+	service      EventService
 }
 
 func (suite *EventServiceTestSuite) SetupTest() {
 	suite.eventRepo = new(MockEventRepositoryForService)
+	suite.transferRepo = new(MockTransferRepository)
 	suite.sqsClient = new(MockSQSClient)
 	// Create a real SQS client for testing
 	realSQSClient := &queue.SQSClient{}
-	suite.service = NewEventService(suite.eventRepo, realSQSClient)
+	suite.service = NewEventService(suite.eventRepo, suite.transferRepo, realSQSClient)
 }
 
 func (suite *EventServiceTestSuite) TearDownTest() {
-	testutils.AssertMockExpectations(suite.T(), &suite.eventRepo.Mock, &suite.sqsClient.Mock)
+	testutils.AssertMockExpectations(suite.T(), &suite.eventRepo.Mock, &suite.transferRepo.Mock, &suite.sqsClient.Mock)
 }
 
 func (suite *EventServiceTestSuite) TestProcessEvent_Success() {

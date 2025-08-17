@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"event-processor/internal/domain/repository"
-	"event-processor/pkg/utils"
 	"fmt"
 	"log"
 
@@ -13,21 +12,19 @@ import (
 
 type TokenEventHandler interface {
 	ProcessTokenEvent(ctx context.Context, event *queue.TokenEvent) error
+	ProcessBalanceUpdate(ctx context.Context, update *queue.BalanceUpdateMessage) error
 }
 
 type tokenEventHandler struct {
-	transferRepo       repository.TransferRepository
 	processedEventRepo repository.ProcessedEventRepository
 	balanceService     BalanceService
 }
 
 func NewTokenEventHandler(
-	transferRepo repository.TransferRepository,
 	processedEventRepo repository.ProcessedEventRepository,
 	balanceService BalanceService,
 ) TokenEventHandler {
 	return &tokenEventHandler{
-		transferRepo:       transferRepo,
 		processedEventRepo: processedEventRepo,
 		balanceService:     balanceService,
 	}
@@ -48,24 +45,7 @@ func (h *tokenEventHandler) ProcessTokenEvent(ctx context.Context, event *queue.
 		return nil
 	}
 
-	// Create transfer record
-	transfer := &models.TokenTransfer{
-		BlockHeight:  event.BlockHeight,
-		TxHash:       event.TxHash,
-		EventID:      event.EventID,
-		FromAddress:  event.FromAddress,
-		ToAddress:    event.ToAddress,
-		TokenPath:    event.PkgPath,
-		Amount:       event.Amount,
-		TransferType: utils.GetTransferType(event.Func),
-	}
-
-	// Save transfer record (with unique constraint protection)
-	if err := h.transferRepo.SaveTransfer(transfer); err != nil {
-		return fmt.Errorf("failed to save transfer: %w", err)
-	}
-
-	// Update balances
+	// Update balances only (transfer record is now saved by block-synchronizer)
 	if err := h.balanceService.UpdateBalances(ctx, event); err != nil {
 		return fmt.Errorf("failed to update balances: %w", err)
 	}
@@ -81,9 +61,47 @@ func (h *tokenEventHandler) ProcessTokenEvent(ctx context.Context, event *queue.
 	if err := h.processedEventRepo.MarkEventProcessed(processedEvent); err != nil {
 		log.Printf("Warning: Failed to mark event %s as processed: %v", eventIdentifier, err)
 		// Don't fail the whole operation if we can't mark as processed
-		// The unique constraint on transfers table will still prevent duplicates
 	}
 
 	log.Printf("Successfully processed event %s (tx: %s, event: %d)", eventIdentifier, event.TxHash, event.EventID)
+	return nil
+}
+
+// ProcessBalanceUpdate processes a single balance update message (new FIFO approach)
+func (h *tokenEventHandler) ProcessBalanceUpdate(ctx context.Context, update *queue.BalanceUpdateMessage) error {
+	// Generate unique event identifier for idempotency
+	eventIdentifier := fmt.Sprintf("%s-%s-%d", update.TxHash, update.Address, update.EventID)
+
+	// Check if this specific balance update is already processed
+	isProcessed, err := h.processedEventRepo.IsEventProcessed(eventIdentifier)
+	if err != nil {
+		return fmt.Errorf("failed to check if balance update is processed: %w", err)
+	}
+
+	if isProcessed {
+		log.Printf("Balance update %s already processed, skipping (idempotent)", eventIdentifier)
+		return nil
+	}
+
+	// Update balance directly using atomic operation
+	if err := h.balanceService.UpdateBalanceAtomic(ctx, update.Address, update.TokenPath, update.Amount); err != nil {
+		return fmt.Errorf("failed to update balance atomically: %w", err)
+	}
+
+	// Mark this balance update as processed for idempotency
+	processedEvent := &models.ProcessedEvent{
+		EventIdentifier: eventIdentifier,
+		TxHash:          update.TxHash,
+		EventID:         update.EventID,
+		BlockHeight:     update.BlockHeight,
+	}
+
+	if err := h.processedEventRepo.MarkEventProcessed(processedEvent); err != nil {
+		log.Printf("Warning: Failed to mark balance update %s as processed: %v", eventIdentifier, err)
+		// Don't fail the operation - the atomic balance update already succeeded
+	}
+
+	log.Printf("Successfully processed balance update %s (address: %s, amount: %s)",
+		eventIdentifier, update.Address, update.Amount)
 	return nil
 }

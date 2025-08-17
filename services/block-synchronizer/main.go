@@ -53,9 +53,10 @@ func initializeServices(db *database.Database, sqsClient *queue.SQSClient, gqlCl
 	blockRepo := repository.NewBlockRepository(db)
 	transactionRepo := repository.NewTransactionRepository(db)
 	eventRepo := repository.NewEventRepository(db)
+	transferRepo := repository.NewTransferRepository(db)
 
 	// Initialize services
-	eventService := service.NewEventService(eventRepo, sqsClient)
+	eventService := service.NewEventService(eventRepo, transferRepo, sqsClient)
 	transactionService := service.NewTransactionService(transactionRepo, gqlClient, eventService)
 	blockService := service.NewBlockService(blockRepo, transactionRepo, eventRepo, gqlClient, transactionService)
 

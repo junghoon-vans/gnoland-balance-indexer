@@ -15,6 +15,7 @@ import (
 
 type BalanceService interface {
 	UpdateBalances(ctx context.Context, event *queue.TokenEvent) error
+	UpdateBalanceAtomic(ctx context.Context, address, tokenPath, amount string) error
 }
 
 type balanceService struct {
@@ -96,4 +97,22 @@ func (s *balanceService) decreaseBalance(tx *gorm.DB, address, tokenPath string,
 	balance.Amount = newAmount.String()
 
 	return s.balanceRepo.UpdateBalanceInTx(tx, balance)
+}
+
+// UpdateBalanceAtomic updates balance using the existing transaction-based approach
+func (s *balanceService) UpdateBalanceAtomic(ctx context.Context, address, tokenPath, amount string) error {
+	amountBig := new(big.Int)
+	if _, ok := amountBig.SetString(amount, 10); !ok {
+		return fmt.Errorf("invalid amount format: %s", amount)
+	}
+
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if amountBig.Sign() >= 0 {
+			return s.increaseBalance(tx, address, tokenPath, amountBig)
+		} else {
+			// Convert to positive for decrease operation
+			absAmount := new(big.Int).Abs(amountBig)
+			return s.decreaseBalance(tx, address, tokenPath, absAmount)
+		}
+	})
 }

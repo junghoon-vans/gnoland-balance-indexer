@@ -49,12 +49,11 @@ func initializeSQSClient() *queue.SQSClient {
 func initializeServices(db *database.Database, sqsClient *queue.SQSClient) service.ProcessorService {
 	// Initialize repositories
 	balanceRepo := repository.NewBalanceRepository(db)
-	transferRepo := repository.NewTransferRepository(db)
 	processedEventRepo := repository.NewProcessedEventRepository(db)
 
 	// Initialize services
 	balanceService := service.NewBalanceService(db, balanceRepo)
-	tokenEventHandler := service.NewTokenEventHandler(transferRepo, processedEventRepo, balanceService)
+	tokenEventHandler := service.NewTokenEventHandler(processedEventRepo, balanceService)
 	messageProcessor := service.NewMessageProcessor(sqsClient, tokenEventHandler, 10)
 	return service.NewProcessorService(messageProcessor)
 }

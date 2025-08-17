@@ -19,17 +19,20 @@ type EventService interface {
 }
 
 type eventService struct {
-	eventRepo repository.EventRepository
-	sqsClient *queue.SQSClient
+	eventRepo    repository.EventRepository
+	transferRepo repository.TransferRepository
+	sqsClient    *queue.SQSClient
 }
 
 func NewEventService(
 	eventRepo repository.EventRepository,
+	transferRepo repository.TransferRepository,
 	sqsClient *queue.SQSClient,
 ) EventService {
 	return &eventService{
-		eventRepo: eventRepo,
-		sqsClient: sqsClient,
+		eventRepo:    eventRepo,
+		transferRepo: transferRepo,
+		sqsClient:    sqsClient,
 	}
 }
 
@@ -147,5 +150,23 @@ func (s *eventService) sendTokenEventToQueue(ctx context.Context, gqlTx *dto.Gra
 		Attributes:  attrs,
 	}
 
-	return s.sqsClient.SendMessage(tokenEvent)
+	// Create transfer record
+	transfer := &models.TokenTransfer{
+		BlockHeight:  gqlTx.BlockHeight,
+		TxHash:       gqlTx.Hash,
+		EventID:      event.ID,
+		FromAddress:  fromAddr,
+		ToAddress:    toAddr,
+		TokenPath:    event.PkgPath,
+		Amount:       amount,
+		TransferType: transferType,
+	}
+
+	// Save transfer event
+	if err := s.transferRepo.SaveTransfer(transfer); err != nil {
+		return fmt.Errorf("failed to save transfer event: %w", err)
+	}
+
+	// Send as separate balance updates for FIFO ordering
+	return s.sqsClient.SendTransferAsBalanceUpdates(tokenEvent)
 }
