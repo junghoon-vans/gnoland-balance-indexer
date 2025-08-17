@@ -74,10 +74,10 @@ GET /tokens/{token_path}/balances?address={address}
 
 ### Transfer History
 ```bash
-# Get all transfers
-GET /tokens/transfer-history
+# Get all transfers (default limit: 1,000)
+GET /tokens/transfer-history?limit={limit}
 
-# Get transfers for specific address
+# Get transfers for specific address (default limit: 1,000)
 GET /tokens/transfer-history?address={address}&limit={limit}
 ```
 
