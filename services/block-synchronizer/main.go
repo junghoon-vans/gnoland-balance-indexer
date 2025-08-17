@@ -1,6 +1,8 @@
 package main
 
 import (
+	repository2 "block-synchronizer/internal/domain/repository"
+	service2 "block-synchronizer/internal/domain/service"
 	"context"
 	"log"
 	"os"
@@ -8,11 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"block-synchronizer/repository"
-	"block-synchronizer/service"
-	"shared/infra/database"
-	"shared/infra/graphql"
-	"shared/infra/queue"
+	"shared/pkg/database"
+	"shared/pkg/graphql"
+	"shared/pkg/queue"
 )
 
 func main() {
@@ -31,17 +31,17 @@ func main() {
 	gqlClient := graphql.NewClient()
 
 	// Initialize repositories
-	blockRepo := repository.NewBlockRepository(db)
-	transactionRepo := repository.NewTransactionRepository(db)
-	eventRepo := repository.NewEventRepository(db)
+	blockRepo := repository2.NewBlockRepository(db)
+	transactionRepo := repository2.NewTransactionRepository(db)
+	eventRepo := repository2.NewEventRepository(db)
 
 	// Initialize services
-	eventService := service.NewEventService(eventRepo, sqsClient)
-	transactionService := service.NewTransactionService(transactionRepo, gqlClient, eventService)
-	blockService := service.NewBlockService(blockRepo, transactionRepo, eventRepo, gqlClient, transactionService)
+	eventService := service2.NewEventService(eventRepo, sqsClient)
+	transactionService := service2.NewTransactionService(transactionRepo, gqlClient, eventService)
+	blockService := service2.NewBlockService(blockRepo, transactionRepo, eventRepo, gqlClient, transactionService)
 
 	// Initialize synchronizer service
-	synchronizerService := service.NewSynchronizerService(blockRepo, blockService)
+	synchronizerService := service2.NewSynchronizerService(blockRepo, blockService)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
