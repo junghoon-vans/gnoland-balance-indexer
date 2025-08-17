@@ -46,29 +46,6 @@ func NewSQSClient() (*SQSClient, error) {
 	}, nil
 }
 
-func (s *SQSClient) SendMessage(event *TokenEvent) error {
-	body, err := json.Marshal(event)
-	if err != nil {
-		return fmt.Errorf("failed to marshal event: %w", err)
-	}
-
-	input := &sqs.SendMessageInput{
-		QueueUrl:    aws.String(s.queueURL),
-		MessageBody: aws.String(string(body)),
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	log.Printf("Sending token event to SQS: %s", event.ID)
-	_, err = s.client.SendMessage(ctx, input)
-	if err != nil {
-		return fmt.Errorf("failed to send message to SQS: %w", err)
-	}
-
-	return nil
-}
-
 // SendBalanceUpdate sends a balance update message with MessageGroupId for FIFO ordering
 func (s *SQSClient) SendBalanceUpdate(update *BalanceUpdateMessage) error {
 	body, err := json.Marshal(update)
@@ -101,47 +78,6 @@ func (s *SQSClient) SendBalanceUpdate(update *BalanceUpdateMessage) error {
 	return nil
 }
 
-// SendTransferAsBalanceUpdates converts a transfer event into separate balance updates
-func (s *SQSClient) SendTransferAsBalanceUpdates(event *TokenEvent) error {
-	// Create balance update for FROM address (decrease)
-	if event.FromAddress != "" {
-		fromUpdate := &BalanceUpdateMessage{
-			Address:      event.FromAddress,
-			TokenPath:    event.PkgPath,
-			Amount:       "-" + event.Amount, // Negative amount for decrease
-			BlockHeight:  event.BlockHeight,
-			TxHash:       event.TxHash,
-			EventID:      event.EventID,
-			TransferType: event.Type,
-			Timestamp:    event.Timestamp,
-		}
-
-		if err := s.SendBalanceUpdate(fromUpdate); err != nil {
-			return fmt.Errorf("failed to send FROM balance update: %w", err)
-		}
-	}
-
-	// Create balance update for TO address (increase)
-	if event.ToAddress != "" {
-		toUpdate := &BalanceUpdateMessage{
-			Address:      event.ToAddress,
-			TokenPath:    event.PkgPath,
-			Amount:       event.Amount, // Positive amount for increase
-			BlockHeight:  event.BlockHeight,
-			TxHash:       event.TxHash,
-			EventID:      event.EventID,
-			TransferType: event.Type,
-			Timestamp:    event.Timestamp,
-		}
-
-		if err := s.SendBalanceUpdate(toUpdate); err != nil {
-			return fmt.Errorf("failed to send TO balance update: %w", err)
-		}
-	}
-
-	return nil
-}
-
 func (s *SQSClient) ReceiveMessages(maxMessages int64) ([]*QueueMessage, error) {
 	input := &sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(s.queueURL),
@@ -160,30 +96,17 @@ func (s *SQSClient) ReceiveMessages(maxMessages int64) ([]*QueueMessage, error) 
 
 	messages := make([]*QueueMessage, 0, len(result.Messages))
 	for _, msg := range result.Messages {
-		// Try to unmarshal as BalanceUpdateMessage first
+		// Unmarshal as BalanceUpdateMessage
 		var balanceUpdate BalanceUpdateMessage
-		if err := json.Unmarshal([]byte(*msg.Body), &balanceUpdate); err == nil && balanceUpdate.Address != "" {
-			queueMsg := &QueueMessage{
-				MessageID:     *msg.MessageId,
-				ReceiptHandle: *msg.ReceiptHandle,
-				Body:          balanceUpdate,
-				Timestamp:     time.Now(),
-			}
-			messages = append(messages, queueMsg)
-			continue
-		}
-
-		// Fallback to TokenEvent for backward compatibility
-		var event TokenEvent
-		if err := json.Unmarshal([]byte(*msg.Body), &event); err != nil {
-			log.Printf("Failed to unmarshal message as both BalanceUpdate and TokenEvent: %v", err)
+		if err := json.Unmarshal([]byte(*msg.Body), &balanceUpdate); err != nil {
+			log.Printf("Failed to unmarshal message as BalanceUpdateMessage: %v", err)
 			continue
 		}
 
 		queueMsg := &QueueMessage{
 			MessageID:     *msg.MessageId,
 			ReceiptHandle: *msg.ReceiptHandle,
-			Body:          event,
+			Body:          balanceUpdate,
 			Timestamp:     time.Now(),
 		}
 		messages = append(messages, queueMsg)

@@ -135,21 +135,6 @@ func (s *eventService) sendTokenEventToQueue(ctx context.Context, gqlTx *dto.Gra
 	// Determine transfer type based on function name and addresses
 	transferType := s.getTransferType(event.Func, fromAddr, toAddr)
 
-	tokenEvent := &queue.TokenEvent{
-		ID:          fmt.Sprintf("%s-%d", gqlTx.Hash, event.ID),
-		BlockHeight: gqlTx.BlockHeight,
-		TxHash:      gqlTx.Hash,
-		EventID:     event.ID,
-		Type:        transferType,
-		Func:        event.Func,
-		PkgPath:     event.PkgPath,
-		FromAddress: fromAddr,
-		ToAddress:   toAddr,
-		Amount:      amount,
-		Timestamp:   time.Now(),
-		Attributes:  attrs,
-	}
-
 	// Create transfer record
 	transfer := &models.TokenTransfer{
 		BlockHeight:  gqlTx.BlockHeight,
@@ -167,6 +152,40 @@ func (s *eventService) sendTokenEventToQueue(ctx context.Context, gqlTx *dto.Gra
 		return fmt.Errorf("failed to save transfer event: %w", err)
 	}
 
-	// Send as separate balance updates for FIFO ordering
-	return s.sqsClient.SendTransferAsBalanceUpdates(tokenEvent)
+	// Send balance updates directly
+	if fromAddr != "" {
+		// Debit from sender
+		fromUpdate := &queue.BalanceUpdateMessage{
+			Address:      fromAddr,
+			TokenPath:    event.PkgPath,
+			Amount:       "-" + amount,
+			BlockHeight:  gqlTx.BlockHeight,
+			TxHash:       gqlTx.Hash,
+			EventID:      event.ID,
+			TransferType: transferType,
+			Timestamp:    time.Now(),
+		}
+		if err := s.sqsClient.SendBalanceUpdate(fromUpdate); err != nil {
+			return fmt.Errorf("failed to send from balance update: %w", err)
+		}
+	}
+
+	if toAddr != "" {
+		// Credit to receiver
+		toUpdate := &queue.BalanceUpdateMessage{
+			Address:      toAddr,
+			TokenPath:    event.PkgPath,
+			Amount:       amount,
+			BlockHeight:  gqlTx.BlockHeight,
+			TxHash:       gqlTx.Hash,
+			EventID:      event.ID,
+			TransferType: transferType,
+			Timestamp:    time.Now(),
+		}
+		if err := s.sqsClient.SendBalanceUpdate(toUpdate); err != nil {
+			return fmt.Errorf("failed to send to balance update: %w", err)
+		}
+	}
+
+	return nil
 }

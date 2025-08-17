@@ -8,13 +8,11 @@ import (
 
 	"shared/pkg/database"
 	"shared/pkg/models"
-	"shared/pkg/queue"
 
 	"gorm.io/gorm"
 )
 
 type BalanceService interface {
-	UpdateBalances(ctx context.Context, event *queue.TokenEvent) error
 	UpdateBalanceAtomic(ctx context.Context, address, tokenPath, amount string) error
 }
 
@@ -28,29 +26,6 @@ func NewBalanceService(db *database.Database, balanceRepo repository.BalanceRepo
 		db:          db,
 		balanceRepo: balanceRepo,
 	}
-}
-
-func (s *balanceService) UpdateBalances(ctx context.Context, event *queue.TokenEvent) error {
-	amount := new(big.Int)
-	if _, ok := amount.SetString(event.Amount, 10); !ok {
-		return fmt.Errorf("invalid amount format: %s", event.Amount)
-	}
-
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		switch event.Type {
-		case queue.TransferTypeMint:
-			return s.increaseBalance(tx, event.ToAddress, event.PkgPath, amount)
-		case queue.TransferTypeBurn:
-			return s.decreaseBalance(tx, event.FromAddress, event.PkgPath, amount)
-		case queue.TransferTypeTransfer:
-			if err := s.decreaseBalance(tx, event.FromAddress, event.PkgPath, amount); err != nil {
-				return err
-			}
-			return s.increaseBalance(tx, event.ToAddress, event.PkgPath, amount)
-		default:
-			return fmt.Errorf("unknown transfer type: %s", event.Type)
-		}
-	})
 }
 
 func (s *balanceService) increaseBalance(tx *gorm.DB, address, tokenPath string, amount *big.Int) error {

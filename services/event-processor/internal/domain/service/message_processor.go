@@ -41,39 +41,17 @@ func (p *messageProcessor) ProcessMessages(ctx context.Context) error {
 	}
 
 	for _, msg := range messages {
-		var err error
-		var messageType string
-
-		// Handle both TokenEvent and BalanceUpdateMessage
-		switch body := msg.Body.(type) {
-		case queue.BalanceUpdateMessage:
-			messageType = "balance_update"
-			err = p.tokenEventHandler.ProcessBalanceUpdate(ctx, &body)
-			if err != nil {
-				log.Printf("Error processing balance update %s: %v", body.Address, err)
-				continue
-			}
-			log.Printf("Successfully processed balance update for address %s", body.Address)
-
-		case queue.TokenEvent:
-			messageType = "token_event"
-			err = p.tokenEventHandler.ProcessTokenEvent(ctx, &body)
-			if err != nil {
-				log.Printf("Error processing token event %s: %v", body.ID, err)
-				continue
-			}
-			log.Printf("Successfully processed token event %s", body.ID)
-
-		default:
-			log.Printf("Unknown message type received: %T", body)
-			// Still delete unknown messages to avoid infinite reprocessing
+		err := p.tokenEventHandler.ProcessBalanceUpdate(ctx, &msg.Body)
+		if err != nil {
+			log.Printf("Error processing balance update %s: %v", msg.Body.Address, err)
+			continue
 		}
+		log.Printf("Successfully processed balance update for address %s", msg.Body.Address)
 
-		// Delete message from queue after successful processing
 		if err := p.sqsClient.DeleteMessage(msg.ReceiptHandle); err != nil {
-			log.Printf("Failed to delete %s message %s from queue: %v", messageType, msg.MessageID, err)
+			log.Printf("Failed to delete balance_update message %s from queue: %v", msg.MessageID, err)
 		} else {
-			log.Printf("Successfully deleted %s message %s from queue", messageType, msg.MessageID)
+			log.Printf("Successfully deleted balance_update message %s from queue", msg.MessageID)
 		}
 	}
 
