@@ -1,10 +1,10 @@
 package handler
 
 import (
-	dto2 "balance-api/internal/api/dto"
-	"balance-api/internal/domain/service"
 	"net/http"
 
+	"balance-api/internal/api/dto"
+	"balance-api/internal/domain/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,15 +17,15 @@ func NewBalanceHandler(balanceService service.BalanceService) *BalanceHandler {
 }
 
 func (h *BalanceHandler) GetTokenBalances(c *gin.Context) {
-	var req dto2.BalanceRequest
+	var req dto.BalanceRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto2.ErrorResponse{Error: "Invalid query parameters"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid query parameters"})
 		return
 	}
 
 	response, err := h.balanceService.GetTokenBalances(req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dto2.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -37,7 +37,7 @@ func (h *BalanceHandler) GetTokenBalancesByPath(c *gin.Context, tokenPath string
 
 	response, err := h.balanceService.GetTokenBalancesByPath(tokenPath, address)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dto2.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 

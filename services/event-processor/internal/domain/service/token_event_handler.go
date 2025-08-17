@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	repository2 "event-processor/internal/domain/repository"
+	"event-processor/internal/domain/repository"
 	"event-processor/pkg/utils"
 	"fmt"
 	"log"
@@ -16,14 +16,14 @@ type TokenEventHandler interface {
 }
 
 type tokenEventHandler struct {
-	transferRepo       repository2.TransferRepository
-	processedEventRepo repository2.ProcessedEventRepository
+	transferRepo       repository.TransferRepository
+	processedEventRepo repository.ProcessedEventRepository
 	balanceService     BalanceService
 }
 
 func NewTokenEventHandler(
-	transferRepo repository2.TransferRepository,
-	processedEventRepo repository2.ProcessedEventRepository,
+	transferRepo repository.TransferRepository,
+	processedEventRepo repository.ProcessedEventRepository,
 	balanceService BalanceService,
 ) TokenEventHandler {
 	return &tokenEventHandler{

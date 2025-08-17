@@ -1,7 +1,7 @@
 package service
 
 import (
-	dto2 "block-synchronizer/internal/api/dto"
+	"block-synchronizer/internal/api/dto"
 	"context"
 	"errors"
 	"fmt"
@@ -62,12 +62,12 @@ func (suite *EventServiceTestSuite) TearDownTest() {
 func (suite *EventServiceTestSuite) TestProcessEvent_Success() {
 	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
-	tx := &dto2.GraphQLTransaction{
+	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
 	}
-	event := &dto2.GraphQLEvent{
+	event := &dto.GraphQLEvent{
 		Type: "transfer",
-		Attrs: []dto2.GraphQLEventAttr{
+		Attrs: []dto.GraphQLEventAttr{
 			{
 				Key:   "from",
 				Value: "addr1",
@@ -97,12 +97,12 @@ func (suite *EventServiceTestSuite) TestProcessEvent_Success() {
 func (suite *EventServiceTestSuite) TestProcessEvent_NoAttrs() {
 	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
-	tx := &dto2.GraphQLTransaction{
+	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
 	}
-	event := &dto2.GraphQLEvent{
+	event := &dto.GraphQLEvent{
 		Type:  "mint",
-		Attrs: []dto2.GraphQLEventAttr{},
+		Attrs: []dto.GraphQLEventAttr{},
 	}
 
 	// Mock expectations
@@ -118,12 +118,12 @@ func (suite *EventServiceTestSuite) TestProcessEvent_NoAttrs() {
 func (suite *EventServiceTestSuite) TestProcessEvent_SaveError() {
 	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
-	tx := &dto2.GraphQLTransaction{
+	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
 	}
-	event := &dto2.GraphQLEvent{
+	event := &dto.GraphQLEvent{
 		Type: "transfer",
-		Attrs: []dto2.GraphQLEventAttr{
+		Attrs: []dto.GraphQLEventAttr{
 			{
 				Key:   "from",
 				Value: "addr1",
@@ -145,12 +145,12 @@ func (suite *EventServiceTestSuite) TestProcessEvent_SaveError() {
 func (suite *EventServiceTestSuite) TestProcessEvent_SaveEventAttrError() {
 	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
-	tx := &dto2.GraphQLTransaction{
+	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
 	}
-	event := &dto2.GraphQLEvent{
+	event := &dto.GraphQLEvent{
 		Type: "transfer",
-		Attrs: []dto2.GraphQLEventAttr{
+		Attrs: []dto.GraphQLEventAttr{
 			{
 				Key:   "from",
 				Value: "addr1",
@@ -178,7 +178,7 @@ func (suite *EventServiceTestSuite) TestProcessEvent_SaveEventAttrError() {
 func (suite *EventServiceTestSuite) TestProcessEvent_NilEvent() {
 	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
-	tx := &dto2.GraphQLTransaction{
+	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
 	}
 
@@ -192,12 +192,12 @@ func (suite *EventServiceTestSuite) TestProcessEvent_NilEvent() {
 func (suite *EventServiceTestSuite) TestProcessEvent_EmptyType() {
 	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
-	tx := &dto2.GraphQLTransaction{
+	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
 	}
-	event := &dto2.GraphQLEvent{
+	event := &dto.GraphQLEvent{
 		Type:  "",
-		Attrs: []dto2.GraphQLEventAttr{},
+		Attrs: []dto.GraphQLEventAttr{},
 	}
 
 	// Mock expectations
@@ -213,20 +213,20 @@ func (suite *EventServiceTestSuite) TestProcessEvent_EmptyType() {
 func (suite *EventServiceTestSuite) TestProcessEvent_ManyAttrs() {
 	ctx := testutils.CreateTestContext()
 	blockHeight := uint(100)
-	tx := &dto2.GraphQLTransaction{
+	tx := &dto.GraphQLTransaction{
 		Hash: "test_hash",
 	}
 
 	// Create many attributes
-	attrs := make([]dto2.GraphQLEventAttr, 10)
+	attrs := make([]dto.GraphQLEventAttr, 10)
 	for i := 0; i < 10; i++ {
-		attrs[i] = dto2.GraphQLEventAttr{
+		attrs[i] = dto.GraphQLEventAttr{
 			Key:   fmt.Sprintf("key%d", i),
 			Value: fmt.Sprintf("value%d", i),
 		}
 	}
 
-	event := &dto2.GraphQLEvent{
+	event := &dto.GraphQLEvent{
 		Type:  "complex_event",
 		Attrs: attrs,
 	}

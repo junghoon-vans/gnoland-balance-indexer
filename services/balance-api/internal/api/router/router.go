@@ -2,8 +2,8 @@ package router
 
 import (
 	"balance-api/internal/api/dto"
-	handler2 "balance-api/internal/api/handler"
-	middleware2 "balance-api/internal/api/middleware"
+	"balance-api/internal/api/handler"
+	"balance-api/internal/api/middleware"
 	"net/http"
 	"strings"
 
@@ -13,16 +13,16 @@ import (
 )
 
 type Router struct {
-	balanceHandler  *handler2.BalanceHandler
-	transferHandler *handler2.TransferHandler
-	healthHandler   *handler2.HealthHandler
+	balanceHandler  *handler.BalanceHandler
+	transferHandler *handler.TransferHandler
+	healthHandler   *handler.HealthHandler
 	cache           sharedcache.Cache
 }
 
 func NewRouter(
-	balanceHandler *handler2.BalanceHandler,
-	transferHandler *handler2.TransferHandler,
-	healthHandler *handler2.HealthHandler,
+	balanceHandler *handler.BalanceHandler,
+	transferHandler *handler.TransferHandler,
+	healthHandler *handler.HealthHandler,
 	cache sharedcache.Cache,
 ) *Router {
 	return &Router{
@@ -37,19 +37,19 @@ func (r *Router) SetupRoutes() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
-	router.Use(middleware2.CORSMiddleware())
+	router.Use(middleware.CORSMiddleware())
 
 	// Health check
 	router.GET("/health", r.healthHandler.HealthCheck)
 
 	// Balance endpoints with caching
 	router.GET("/tokens/balances",
-		middleware2.CacheMiddleware(r.cache, middleware2.BalanceAddressConfig),
+		middleware.CacheMiddleware(r.cache, middleware.BalanceAddressConfig),
 		r.balanceHandler.GetTokenBalances)
 
 	// Transfer endpoints with caching
 	router.GET("/tokens/transfer-history",
-		middleware2.CacheMiddleware(r.cache, middleware2.TransferHistoryConfig),
+		middleware.CacheMiddleware(r.cache, middleware.TransferHistoryConfig),
 		r.transferHandler.GetTransferHistory)
 
 	// Custom handler for token paths with slashes
@@ -69,7 +69,7 @@ func (r *Router) handleTokenPaths(c *gin.Context) {
 
 		if tokenPath != "" {
 			// Apply cache middleware and call handler
-			cacheMiddleware := middleware2.CacheMiddleware(r.cache, middleware2.BalanceTokenConfig)
+			cacheMiddleware := middleware.CacheMiddleware(r.cache, middleware.BalanceTokenConfig)
 			cacheMiddleware(c)
 
 			// Only call handler if cache middleware didn't abort

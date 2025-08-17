@@ -1,7 +1,7 @@
 package service
 
 import (
-	dto2 "block-synchronizer/internal/api/dto"
+	"block-synchronizer/internal/api/dto"
 	"context"
 	"errors"
 	"testing"
@@ -74,7 +74,7 @@ func (m *MockTransactionService) ProcessTransactions(ctx context.Context, blockH
 	return args.Error(0)
 }
 
-func (m *MockTransactionService) ProcessTransaction(ctx context.Context, gqlTx *dto2.GraphQLTransaction) error {
+func (m *MockTransactionService) ProcessTransaction(ctx context.Context, gqlTx *dto.GraphQLTransaction) error {
 	args := m.Called(ctx, gqlTx)
 	return args.Error(0)
 }
@@ -142,7 +142,7 @@ func (suite *BlockServiceTestSuite) TestGetLatestBlockHeightWhenNoBlock() {
 }
 
 func (suite *BlockServiceTestSuite) TestProcessBlock() {
-	gqlBlock := &dto2.GraphQLBlock{
+	gqlBlock := &dto.GraphQLBlock{
 		Hash:     "test-hash",
 		Height:   1,
 		Time:     time.Now().Format(time.RFC3339),
@@ -162,7 +162,7 @@ func (suite *BlockServiceTestSuite) TestProcessBlock() {
 }
 
 func (suite *BlockServiceTestSuite) TestProcessBlockWithInvalidTime() {
-	gqlBlock := &dto2.GraphQLBlock{
+	gqlBlock := &dto.GraphQLBlock{
 		Hash:     "test-hash",
 		Height:   1,
 		Time:     "invalid-time-format",
@@ -177,7 +177,7 @@ func (suite *BlockServiceTestSuite) TestProcessBlockWithInvalidTime() {
 }
 
 func (suite *BlockServiceTestSuite) TestProcessBlockWithSaveError() {
-	gqlBlock := &dto2.GraphQLBlock{
+	gqlBlock := &dto.GraphQLBlock{
 		Hash:     "test-hash",
 		Height:   1,
 		Time:     time.Now().Format(time.RFC3339),

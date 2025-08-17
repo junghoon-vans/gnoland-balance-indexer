@@ -1,7 +1,7 @@
 package service
 
 import (
-	dto2 "block-synchronizer/internal/api/dto"
+	"block-synchronizer/internal/api/dto"
 	"context"
 	"errors"
 	"testing"
@@ -19,7 +19,7 @@ type MockEventServiceForTransaction struct {
 	mock.Mock
 }
 
-func (m *MockEventServiceForTransaction) ProcessEvent(ctx context.Context, txID uint, gqlTx *dto2.GraphQLTransaction, gqlEvent *dto2.GraphQLEvent) error {
+func (m *MockEventServiceForTransaction) ProcessEvent(ctx context.Context, txID uint, gqlTx *dto.GraphQLTransaction, gqlEvent *dto.GraphQLEvent) error {
 	args := m.Called(ctx, txID, gqlTx, gqlEvent)
 	return args.Error(0)
 }
@@ -111,7 +111,7 @@ func (suite *TransactionServiceTestSuite) TestProcessTransactions_GraphQLError()
 
 func (suite *TransactionServiceTestSuite) TestProcessTransaction_Success() {
 	ctx := testutils.CreateTestContext()
-	gqlTx := &dto2.GraphQLTransaction{
+	gqlTx := &dto.GraphQLTransaction{
 		Hash:        "test-hash",
 		Index:       0,
 		BlockHeight: 100,
@@ -119,13 +119,13 @@ func (suite *TransactionServiceTestSuite) TestProcessTransaction_Success() {
 		GasWanted:   1000,
 		GasUsed:     800,
 		Memo:        "test memo",
-		Response: dto2.GraphQLTransactionResp{
-			Events: []dto2.GraphQLEvent{
+		Response: dto.GraphQLTransactionResp{
+			Events: []dto.GraphQLEvent{
 				{
 					Type:    "transfer",
 					Func:    "Transfer",
 					PkgPath: "gno.land/p/demo/grc20",
-					Attrs: []dto2.GraphQLEventAttr{
+					Attrs: []dto.GraphQLEventAttr{
 						{Key: "from", Value: "addr1"},
 						{Key: "to", Value: "addr2"},
 					},
@@ -148,7 +148,7 @@ func (suite *TransactionServiceTestSuite) TestProcessTransaction_Success() {
 
 func (suite *TransactionServiceTestSuite) TestProcessTransaction_SaveError() {
 	ctx := testutils.CreateTestContext()
-	gqlTx := &dto2.GraphQLTransaction{
+	gqlTx := &dto.GraphQLTransaction{
 		Hash:        "test-hash",
 		Index:       0,
 		BlockHeight: 100,
@@ -156,8 +156,8 @@ func (suite *TransactionServiceTestSuite) TestProcessTransaction_SaveError() {
 		GasWanted:   1000,
 		GasUsed:     800,
 		Memo:        "test memo",
-		Response: dto2.GraphQLTransactionResp{
-			Events: []dto2.GraphQLEvent{},
+		Response: dto.GraphQLTransactionResp{
+			Events: []dto.GraphQLEvent{},
 		},
 	}
 
@@ -171,7 +171,7 @@ func (suite *TransactionServiceTestSuite) TestProcessTransaction_SaveError() {
 
 func (suite *TransactionServiceTestSuite) TestProcessTransaction_EventProcessingError() {
 	ctx := testutils.CreateTestContext()
-	gqlTx := &dto2.GraphQLTransaction{
+	gqlTx := &dto.GraphQLTransaction{
 		Hash:        "test-hash",
 		Index:       0,
 		BlockHeight: 100,
@@ -179,13 +179,13 @@ func (suite *TransactionServiceTestSuite) TestProcessTransaction_EventProcessing
 		GasWanted:   1000,
 		GasUsed:     800,
 		Memo:        "test memo",
-		Response: dto2.GraphQLTransactionResp{
-			Events: []dto2.GraphQLEvent{
+		Response: dto.GraphQLTransactionResp{
+			Events: []dto.GraphQLEvent{
 				{
 					Type:    "transfer",
 					Func:    "Transfer",
 					PkgPath: "gno.land/p/demo/grc20",
-					Attrs: []dto2.GraphQLEventAttr{
+					Attrs: []dto.GraphQLEventAttr{
 						{Key: "from", Value: "addr1"},
 					},
 				},

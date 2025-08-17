@@ -2,7 +2,7 @@ package service
 
 import (
 	"block-synchronizer/internal/api/dto"
-	repository2 "block-synchronizer/internal/domain/repository"
+	"block-synchronizer/internal/domain/repository"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -24,17 +24,17 @@ type BlockService interface {
 }
 
 type blockService struct {
-	blockRepo          repository2.BlockRepository
-	transactionRepo    repository2.TransactionRepository
-	eventRepo          repository2.EventRepository
+	blockRepo          repository.BlockRepository
+	transactionRepo    repository.TransactionRepository
+	eventRepo          repository.EventRepository
 	gqlClient          GraphQLClientInterface
 	transactionService TransactionService
 }
 
 func NewBlockService(
-	blockRepo repository2.BlockRepository,
-	transactionRepo repository2.TransactionRepository,
-	eventRepo repository2.EventRepository,
+	blockRepo repository.BlockRepository,
+	transactionRepo repository.TransactionRepository,
+	eventRepo repository.EventRepository,
 	gqlClient GraphQLClientInterface,
 	transactionService TransactionService,
 ) BlockService {

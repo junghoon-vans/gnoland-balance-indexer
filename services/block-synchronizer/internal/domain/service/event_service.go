@@ -1,7 +1,7 @@
 package service
 
 import (
-	dto2 "block-synchronizer/internal/api/dto"
+	"block-synchronizer/internal/api/dto"
 	"block-synchronizer/internal/domain/repository"
 	"context"
 	"fmt"
@@ -15,7 +15,7 @@ import (
 )
 
 type EventService interface {
-	ProcessEvent(ctx context.Context, txID uint, gqlTx *dto2.GraphQLTransaction, gqlEvent *dto2.GraphQLEvent) error
+	ProcessEvent(ctx context.Context, txID uint, gqlTx *dto.GraphQLTransaction, gqlEvent *dto.GraphQLEvent) error
 }
 
 type eventService struct {
@@ -33,7 +33,7 @@ func NewEventService(
 	}
 }
 
-func (s *eventService) ProcessEvent(ctx context.Context, txID uint, gqlTx *dto2.GraphQLTransaction, gqlEvent *dto2.GraphQLEvent) error {
+func (s *eventService) ProcessEvent(ctx context.Context, txID uint, gqlTx *dto.GraphQLTransaction, gqlEvent *dto.GraphQLEvent) error {
 	if gqlEvent == nil {
 		return fmt.Errorf("event cannot be nil")
 	}
@@ -112,7 +112,7 @@ func (s *eventService) getTransferType(funcName, fromAddr, toAddr string) string
 	}
 }
 
-func (s *eventService) sendTokenEventToQueue(ctx context.Context, gqlTx *dto2.GraphQLTransaction, event *models.TransactionEvent, attrs map[string]string) error {
+func (s *eventService) sendTokenEventToQueue(ctx context.Context, gqlTx *dto.GraphQLTransaction, event *models.TransactionEvent, attrs map[string]string) error {
 	fromAddr := attrs["from"]
 	toAddr := attrs["to"]
 	amount := attrs["value"]

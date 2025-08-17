@@ -1,7 +1,7 @@
 package service
 
 import (
-	dto2 "balance-api/internal/api/dto"
+	"balance-api/internal/api/dto"
 	"balance-api/internal/domain/repository"
 	"balance-api/pkg/utils"
 	"fmt"
@@ -12,8 +12,8 @@ import (
 )
 
 type BalanceService interface {
-	GetTokenBalances(req dto2.BalanceRequest) (*dto2.BalanceResponse, error)
-	GetTokenBalancesByPath(tokenPath string, address string) (*dto2.AccountBalancesResponse, error)
+	GetTokenBalances(req dto.BalanceRequest) (*dto.BalanceResponse, error)
+	GetTokenBalancesByPath(tokenPath string, address string) (*dto.AccountBalancesResponse, error)
 }
 
 type balanceService struct {
@@ -26,7 +26,7 @@ func NewBalanceService(balanceRepo repository.BalanceRepository) BalanceService 
 	}
 }
 
-func (s *balanceService) GetTokenBalances(req dto2.BalanceRequest) (*dto2.BalanceResponse, error) {
+func (s *balanceService) GetTokenBalances(req dto.BalanceRequest) (*dto.BalanceResponse, error) {
 	if req.Address != "" {
 		if !utils.IsValidAddress(req.Address) {
 			return nil, fmt.Errorf("invalid address format")
@@ -37,15 +37,15 @@ func (s *balanceService) GetTokenBalances(req dto2.BalanceRequest) (*dto2.Balanc
 			return nil, fmt.Errorf("failed to fetch balances: %w", err)
 		}
 
-		tokenBalances := make([]dto2.TokenBalanceInfo, 0, len(balances))
+		tokenBalances := make([]dto.TokenBalanceInfo, 0, len(balances))
 		for _, balance := range balances {
-			tokenBalances = append(tokenBalances, dto2.TokenBalanceInfo{
+			tokenBalances = append(tokenBalances, dto.TokenBalanceInfo{
 				TokenPath: balance.TokenPath,
 				Amount:    balance.Amount,
 			})
 		}
 
-		return &dto2.BalanceResponse{Balances: tokenBalances}, nil
+		return &dto.BalanceResponse{Balances: tokenBalances}, nil
 	}
 
 	// Get all balances and aggregate by token path
@@ -65,20 +65,20 @@ func (s *balanceService) GetTokenBalances(req dto2.BalanceRequest) (*dto2.Balanc
 		}
 	}
 
-	tokenBalances := make([]dto2.TokenBalanceInfo, 0)
+	tokenBalances := make([]dto.TokenBalanceInfo, 0)
 	for tokenPath, amount := range tokenMap {
 		if amount != "0" {
-			tokenBalances = append(tokenBalances, dto2.TokenBalanceInfo{
+			tokenBalances = append(tokenBalances, dto.TokenBalanceInfo{
 				TokenPath: tokenPath,
 				Amount:    amount,
 			})
 		}
 	}
 
-	return &dto2.BalanceResponse{Balances: tokenBalances}, nil
+	return &dto.BalanceResponse{Balances: tokenBalances}, nil
 }
 
-func (s *balanceService) GetTokenBalancesByPath(tokenPath string, address string) (*dto2.AccountBalancesResponse, error) {
+func (s *balanceService) GetTokenBalancesByPath(tokenPath string, address string) (*dto.AccountBalancesResponse, error) {
 	// Decode URL-encoded token path
 	decodedTokenPath := strings.ReplaceAll(tokenPath, "%2F", "/")
 
@@ -98,14 +98,14 @@ func (s *balanceService) GetTokenBalancesByPath(tokenPath string, address string
 		return nil, fmt.Errorf("failed to fetch balances: %w", err)
 	}
 
-	accountBalances := make([]dto2.AccountBalanceInfo, 0, len(balances))
+	accountBalances := make([]dto.AccountBalanceInfo, 0, len(balances))
 	for _, balance := range balances {
-		accountBalances = append(accountBalances, dto2.AccountBalanceInfo{
+		accountBalances = append(accountBalances, dto.AccountBalanceInfo{
 			Address:   balance.Address,
 			TokenPath: balance.TokenPath,
 			Amount:    balance.Amount,
 		})
 	}
 
-	return &dto2.AccountBalancesResponse{AccountBalances: accountBalances}, nil
+	return &dto.AccountBalancesResponse{AccountBalances: accountBalances}, nil
 }

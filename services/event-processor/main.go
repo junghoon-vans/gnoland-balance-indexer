@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	repository2 "event-processor/internal/domain/repository"
-	service2 "event-processor/internal/domain/service"
+	"event-processor/internal/domain/repository"
+	"event-processor/internal/domain/service"
 	"log"
 	"os"
 	"os/signal"
@@ -28,15 +28,15 @@ func main() {
 	}
 
 	// Initialize repositories
-	balanceRepo := repository2.NewBalanceRepository(db)
-	transferRepo := repository2.NewTransferRepository(db)
-	processedEventRepo := repository2.NewProcessedEventRepository(db)
+	balanceRepo := repository.NewBalanceRepository(db)
+	transferRepo := repository.NewTransferRepository(db)
+	processedEventRepo := repository.NewProcessedEventRepository(db)
 
 	// Initialize services
-	balanceService := service2.NewBalanceService(db, balanceRepo)
-	tokenEventHandler := service2.NewTokenEventHandler(transferRepo, processedEventRepo, balanceService)
-	messageProcessor := service2.NewMessageProcessor(sqsClient, tokenEventHandler, 10)
-	processorService := service2.NewProcessorService(messageProcessor)
+	balanceService := service.NewBalanceService(db, balanceRepo)
+	tokenEventHandler := service.NewTokenEventHandler(transferRepo, processedEventRepo, balanceService)
+	messageProcessor := service.NewMessageProcessor(sqsClient, tokenEventHandler, 10)
+	processorService := service.NewProcessorService(messageProcessor)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

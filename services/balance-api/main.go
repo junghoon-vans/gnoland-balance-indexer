@@ -1,10 +1,10 @@
 package main
 
 import (
-	handler2 "balance-api/internal/api/handler"
+	"balance-api/internal/api/handler"
 	"balance-api/internal/api/router"
-	repository2 "balance-api/internal/domain/repository"
-	service2 "balance-api/internal/domain/service"
+	"balance-api/internal/domain/repository"
+	"balance-api/internal/domain/service"
 	"log"
 	"net/http"
 	"os"
@@ -30,17 +30,17 @@ func main() {
 	defer redisCache.Close()
 
 	// Initialize repositories
-	balanceRepo := repository2.NewBalanceRepository(db)
-	transferRepo := repository2.NewTransferRepository(db)
+	balanceRepo := repository.NewBalanceRepository(db)
+	transferRepo := repository.NewTransferRepository(db)
 
 	// Initialize services
-	balanceService := service2.NewBalanceService(balanceRepo)
-	transferService := service2.NewTransferService(transferRepo)
+	balanceService := service.NewBalanceService(balanceRepo)
+	transferService := service.NewTransferService(transferRepo)
 
 	// Initialize handlers
-	balanceHandler := handler2.NewBalanceHandler(balanceService)
-	transferHandler := handler2.NewTransferHandler(transferService)
-	healthHandler := handler2.NewHealthHandler()
+	balanceHandler := handler.NewBalanceHandler(balanceService)
+	transferHandler := handler.NewTransferHandler(transferService)
+	healthHandler := handler.NewHealthHandler()
 
 	// Initialize router
 	appRouter := router.NewRouter(balanceHandler, transferHandler, healthHandler, redisCache)

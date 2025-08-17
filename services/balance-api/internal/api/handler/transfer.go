@@ -1,10 +1,10 @@
 package handler
 
 import (
-	dto2 "balance-api/internal/api/dto"
-	"balance-api/internal/domain/service"
 	"net/http"
 
+	"balance-api/internal/api/dto"
+	"balance-api/internal/domain/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,15 +17,15 @@ func NewTransferHandler(transferService service.TransferService) *TransferHandle
 }
 
 func (h *TransferHandler) GetTransferHistory(c *gin.Context) {
-	var req dto2.TransferHistoryRequest
+	var req dto.TransferHistoryRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto2.ErrorResponse{Error: "Invalid query parameters"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "Invalid query parameters"})
 		return
 	}
 
 	response, err := h.transferService.GetTransferHistory(req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dto2.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 

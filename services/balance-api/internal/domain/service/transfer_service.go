@@ -1,7 +1,7 @@
 package service
 
 import (
-	dto2 "balance-api/internal/api/dto"
+	"balance-api/internal/api/dto"
 	"balance-api/internal/domain/repository"
 	"balance-api/pkg/utils"
 	"fmt"
@@ -10,7 +10,7 @@ import (
 )
 
 type TransferService interface {
-	GetTransferHistory(req dto2.TransferHistoryRequest) (*dto2.TransferHistoryResponse, error)
+	GetTransferHistory(req dto.TransferHistoryRequest) (*dto.TransferHistoryResponse, error)
 }
 
 type transferService struct {
@@ -23,7 +23,7 @@ func NewTransferService(transferRepo repository.TransferRepository) TransferServ
 	}
 }
 
-func (s *transferService) GetTransferHistory(req dto2.TransferHistoryRequest) (*dto2.TransferHistoryResponse, error) {
+func (s *transferService) GetTransferHistory(req dto.TransferHistoryRequest) (*dto.TransferHistoryResponse, error) {
 	limit := req.Limit
 	if limit <= 0 {
 		limit = 1000 // default limit
@@ -46,9 +46,9 @@ func (s *transferService) GetTransferHistory(req dto2.TransferHistoryRequest) (*
 	}
 
 	// Convert to DTO
-	transferInfos := make([]dto2.TransferInfo, 0, len(transfers))
+	transferInfos := make([]dto.TransferInfo, 0, len(transfers))
 	for _, transfer := range transfers {
-		transferInfos = append(transferInfos, dto2.TransferInfo{
+		transferInfos = append(transferInfos, dto.TransferInfo{
 			FromAddress: transfer.FromAddress,
 			ToAddress:   transfer.ToAddress,
 			TokenPath:   transfer.TokenPath,
@@ -56,5 +56,5 @@ func (s *transferService) GetTransferHistory(req dto2.TransferHistoryRequest) (*
 		})
 	}
 
-	return &dto2.TransferHistoryResponse{Transfers: transferInfos}, nil
+	return &dto.TransferHistoryResponse{Transfers: transferInfos}, nil
 }
