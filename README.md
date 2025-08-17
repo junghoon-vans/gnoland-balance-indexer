@@ -127,3 +127,26 @@ See below `.env.example` for reference configuration.
 - [balance-api](services/balance-api/config/.env.example)
 - [block-synchronizer](services/block-synchronizer/config/.env.example)
 - [event-processor](services/event-processor/config/.env.example)
+
+## Database Schema
+
+The indexer uses PostgreSQL with the following main tables:
+
+### Core Tables
+- **`blocks`**: Blockchain block information (height, hash, timestamps)
+- **`transactions`**: Transaction details with gas usage and success status
+- **`transaction_events`**: Events emitted by transactions (type, function, package path)
+- **`transaction_event_attrs`**: Key-value attributes for each event
+
+### Token-specific Tables
+- **`token_balances`**: Current token balances per address and token path
+- **`token_transfers`**: Historical transfer records with type classification
+- **`processed_events`**: Idempotency tracking to prevent duplicate event processing
+
+### Key Features
+- **Unique Constraints**: Prevent duplicate transfers (`tx_hash`, `event_id`)
+- **Optimized Indexes**: Fast queries on addresses, token paths, and block heights
+- **Auto-timestamps**: Automatic `created_at` and `updated_at` tracking
+- **Large Numbers**: Support for 78-digit token amounts using `NUMERIC(78,0)`
+
+For complete schema details, see [init_schema.sql](shared/init/init_schema.sql).
