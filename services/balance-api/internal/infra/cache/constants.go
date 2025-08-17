@@ -7,9 +7,9 @@ import (
 
 // Cache TTL constants
 const (
-	BalanceAddressTTL  = 5 * time.Minute // Individual address balances
-	BalanceTokenTTL    = 3 * time.Minute // Token-specific balances
-	TransferHistoryTTL = 2 * time.Minute // Transfer history
+	BalanceAddressTTL  = 10 * time.Second // Individual address balances
+	BalanceTokenTTL    = 15 * time.Second // Token-specific balances
+	TransferHistoryTTL = 30 * time.Second // Transfer history
 )
 
 // Cache key prefixes

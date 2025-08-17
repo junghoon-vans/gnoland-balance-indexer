@@ -81,6 +81,18 @@ GET /tokens/transfer-history?limit={limit}
 GET /tokens/transfer-history?address={address}&limit={limit}
 ```
 
+### Cache Configuration
+
+All API responses are cached with the following TTL settings:
+
+| Endpoint | Cache TTL | Description |
+|----------|-----------|-------------|
+| `/tokens/balances` | 10 seconds | Individual address balances |
+| `/tokens/{token_path}/balances` | 15 seconds | Token-specific balances |
+| `/tokens/transfer-history` | 30 seconds | Transfer history queries |
+
+**Note**: Cache TTL is optimized for production use, balancing real-time data accuracy with performance. Individual balance queries have the shortest TTL for better user experience after transactions.
+
 ## Architecture Highlights
 
 ### Idempotent Processing
