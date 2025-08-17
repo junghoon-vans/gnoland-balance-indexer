@@ -26,6 +26,7 @@ func SetupInMemoryDB() (*database.Database, error) {
 		&models.TransactionEventAttr{},
 		&models.TokenBalance{},
 		&models.TokenTransfer{},
+		&models.ProcessedEvent{},
 	)
 	if err != nil {
 		return nil, err
@@ -34,8 +35,18 @@ func SetupInMemoryDB() (*database.Database, error) {
 	return db, nil
 }
 
+// SetupInMemoryDBOrPanic is an alias for SetupInMemoryDB for test compatibility
+func SetupInMemoryDBOrPanic() *database.Database {
+	db, err := SetupInMemoryDB()
+	if err != nil {
+		panic(err)
+	}
+	return db
+}
+
 // CleanupDatabase cleans all tables in the test database
 func CleanupDatabase(db *database.Database) {
+	db.Exec("DELETE FROM processed_events")
 	db.Exec("DELETE FROM token_transfers")
 	db.Exec("DELETE FROM token_balances")
 	db.Exec("DELETE FROM transaction_event_attrs")

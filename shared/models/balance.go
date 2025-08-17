@@ -33,3 +33,18 @@ func (TokenBalance) TableName() string {
 func (TokenTransfer) TableName() string {
 	return "token_transfers"
 }
+
+type ProcessedEvent struct {
+	ID                uint      `gorm:"primaryKey" json:"id"`
+	EventIdentifier   string    `gorm:"uniqueIndex;not null" json:"event_identifier"` // tx_hash-event_id format
+	TxHash            string    `gorm:"not null;index" json:"tx_hash"`
+	EventID           uint      `gorm:"not null;index" json:"event_id"`
+	BlockHeight       int64     `gorm:"not null;index" json:"block_height"`
+	ProcessorInstance string    `gorm:"index" json:"processor_instance"`
+	ProcessedAt       time.Time `gorm:"autoCreateTime" json:"processed_at"`
+	CreatedAt         time.Time `gorm:"autoCreateTime" json:"created_at"`
+}
+
+func (ProcessedEvent) TableName() string {
+	return "processed_events"
+}

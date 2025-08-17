@@ -74,6 +74,20 @@ CREATE TABLE IF NOT EXISTS token_transfers (
     token_path VARCHAR(255) NOT NULL,
     amount NUMERIC(78,0) NOT NULL,
     transfer_type VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    -- Add unique constraint to prevent duplicate processing
+    CONSTRAINT unique_transfer_event UNIQUE (tx_hash, event_id)
+);
+
+-- Create processed events table for idempotency tracking
+CREATE TABLE IF NOT EXISTS processed_events (
+    id SERIAL PRIMARY KEY,
+    event_identifier VARCHAR(255) UNIQUE NOT NULL, -- tx_hash-event_id format
+    tx_hash VARCHAR(64) NOT NULL,
+    event_id INTEGER NOT NULL,
+    block_height BIGINT NOT NULL,
+    processor_instance VARCHAR(100),
+    processed_at TIMESTAMP DEFAULT NOW(),
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -101,6 +115,12 @@ CREATE INDEX IF NOT EXISTS idx_token_transfers_transfer_type ON token_transfers(
 CREATE INDEX IF NOT EXISTS idx_token_balances_address ON token_balances(address);
 CREATE INDEX IF NOT EXISTS idx_token_balances_token_path ON token_balances(token_path);
 CREATE INDEX IF NOT EXISTS idx_token_balances_amount ON token_balances(amount);
+
+-- Create indexes for processed events
+CREATE INDEX IF NOT EXISTS idx_processed_events_tx_hash ON processed_events(tx_hash);
+CREATE INDEX IF NOT EXISTS idx_processed_events_block_height ON processed_events(block_height);
+CREATE INDEX IF NOT EXISTS idx_processed_events_processor_instance ON processed_events(processor_instance);
+CREATE INDEX IF NOT EXISTS idx_processed_events_processed_at ON processed_events(processed_at);
 
 -- Add updated_at trigger for blocks
 CREATE OR REPLACE FUNCTION update_updated_at_column()

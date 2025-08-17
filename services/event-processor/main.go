@@ -30,10 +30,11 @@ func main() {
 	// Initialize repositories
 	balanceRepo := repository.NewBalanceRepository(db)
 	transferRepo := repository.NewTransferRepository(db)
+	processedEventRepo := repository.NewProcessedEventRepository(db)
 
 	// Initialize services
 	balanceService := service.NewBalanceService(db, balanceRepo)
-	tokenEventHandler := service.NewTokenEventHandler(transferRepo, balanceService)
+	tokenEventHandler := service.NewTokenEventHandler(transferRepo, processedEventRepo, balanceService)
 	messageProcessor := service.NewMessageProcessor(sqsClient, tokenEventHandler, 10)
 	processorService := service.NewProcessorService(messageProcessor)
 

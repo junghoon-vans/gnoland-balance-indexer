@@ -1,8 +1,13 @@
 package repository
 
 import (
+	"errors"
+	"log"
+
 	"shared/infra/database"
 	"shared/models"
+
+	"gorm.io/gorm"
 )
 
 type TransferRepository interface {
@@ -18,5 +23,15 @@ func NewTransferRepository(db *database.Database) TransferRepository {
 }
 
 func (r *transferRepository) SaveTransfer(transfer *models.TokenTransfer) error {
-	return r.db.Create(transfer).Error
+	err := r.db.Create(transfer).Error
+	if err != nil {
+		// Check if it's a duplicate key error (unique constraint violation)
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			log.Printf("Transfer already exists (tx: %s, event: %d), treating as idempotent success",
+				transfer.TxHash, transfer.EventID)
+			return nil // Treat duplicate as success for idempotency
+		}
+		return err
+	}
+	return nil
 }
