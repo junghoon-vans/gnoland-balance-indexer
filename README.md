@@ -1,14 +1,14 @@
 # Gno.land Balance Indexer
 
-A high-performance microservices-based indexer for tracking token balances and transfers on the [Gno.land](https://gno.land/) blockchain.
+A microservices-based indexer for tracking token balances and transfers on the [Gno.land](https://gno.land/) blockchain.
 
 ## Features
 
-- **Event-driven Architecture**: Real-time token balance tracking via SQS message queues
-- **Horizontal Scaling**: Multiple event processor instances with idempotent message processing
-- **High Performance**: Redis-based caching with configurable TTL strategies
-- **Data Consistency**: Database constraints and idempotency patterns prevent duplicate processing
-- **Enterprise-grade**: Comprehensive error handling, graceful shutdown, and observability
+- **Event-driven Architecture**: Block synchronizer publishes token events to SQS message queue
+- **Message Processing**: Event processor consumes events with idempotent processing to prevent duplicates
+- **Caching**: Redis-based response caching with configurable TTL strategies
+- **Data Consistency**: Database constraints and processed event tracking prevent duplicate processing
+- **REST API**: Query token balances and transfer history with cached responses
 
 ## Architecture
 
@@ -16,7 +16,7 @@ A high-performance microservices-based indexer for tracking token balances and t
 graph TB
     subgraph "Services"
         BS[Block Synchronizer]
-        EP[Event Processor × N]
+        EP[Event Processor]
         API[Balance API]
     end
 
@@ -86,18 +86,16 @@ GET /tokens/transfer-history?address={address}&limit={limit}
 ### Idempotent Processing
 - **Event Deduplication**: `processed_events` table tracks handled events
 - **Database Constraints**: `UNIQUE(tx_hash, event_id)` prevents duplicate transfers
-- **Graceful Degradation**: System continues operating even if tracking fails
+- **Message Acknowledgment**: SQS messages deleted only after successful processing
 
-### Scalability & Resilience
-- **Message Queues**: SQS ensures reliable event delivery between services
-- **Caching Layer**: Redis middleware with configurable TTL reduces database load
-- **Connection Pooling**: Optimized database connections via GORM
-- **Health Checks**: Docker Compose health monitoring for all services
+### Caching Strategy
+- **Response Caching**: Redis middleware caches API responses with configurable TTL
+- **Cache-aside Pattern**: Queries check cache first, populate on cache miss
+- **Cache Key Generation**: Automatic cache key generation based on request parameters
 
-### Data Consistency
-- **ACID Transactions**: Database transactions ensure balance consistency
-- **Retry Logic**: Failed messages automatically retry via SQS visibility timeout
-- **Sequential Processing**: Block synchronization prevents data gaps
+### Message Processing
+- **SQS Integration**: LocalStack provides local SQS environment for development
+- **Sequential Block Processing**: Block synchronizer processes blocks sequentially
 
 ## Development
 
