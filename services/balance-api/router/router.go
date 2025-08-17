@@ -1,12 +1,14 @@
 package router
 
 import (
+	"balance-api/cache"
 	"net/http"
 	"strings"
 
 	"balance-api/dto"
 	"balance-api/handler"
 	"balance-api/middleware"
+	sharedcache "shared/infra/cache"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,17 +17,20 @@ type Router struct {
 	balanceHandler  *handler.BalanceHandler
 	transferHandler *handler.TransferHandler
 	healthHandler   *handler.HealthHandler
+	cache           sharedcache.Cache
 }
 
 func NewRouter(
 	balanceHandler *handler.BalanceHandler,
 	transferHandler *handler.TransferHandler,
 	healthHandler *handler.HealthHandler,
+	cache sharedcache.Cache,
 ) *Router {
 	return &Router{
 		balanceHandler:  balanceHandler,
 		transferHandler: transferHandler,
 		healthHandler:   healthHandler,
+		cache:           cache,
 	}
 }
 
@@ -38,11 +43,15 @@ func (r *Router) SetupRoutes() *gin.Engine {
 	// Health check
 	router.GET("/health", r.healthHandler.HealthCheck)
 
-	// Balance endpoints
-	router.GET("/tokens/balances", r.balanceHandler.GetTokenBalances)
+	// Balance endpoints with caching
+	router.GET("/tokens/balances",
+		cache.CacheMiddleware(r.cache, cache.BalanceAddressConfig),
+		r.balanceHandler.GetTokenBalances)
 
-	// Transfer endpoints
-	router.GET("/tokens/transfer-history", r.transferHandler.GetTransferHistory)
+	// Transfer endpoints with caching
+	router.GET("/tokens/transfer-history",
+		cache.CacheMiddleware(r.cache, cache.TransferHistoryConfig),
+		r.transferHandler.GetTransferHistory)
 
 	// Custom handler for token paths with slashes
 	router.NoRoute(r.handleTokenPaths)
@@ -60,8 +69,14 @@ func (r *Router) handleTokenPaths(c *gin.Context) {
 		tokenPath = strings.TrimSuffix(tokenPath, "/balances")
 
 		if tokenPath != "" {
-			// Call the balance handler with the extracted token path
-			r.balanceHandler.GetTokenBalancesByPath(c, tokenPath)
+			// Apply cache middleware and call handler
+			cacheMiddleware := cache.CacheMiddleware(r.cache, cache.BalanceTokenConfig)
+			cacheMiddleware(c)
+
+			// Only call handler if cache middleware didn't abort
+			if !c.IsAborted() {
+				r.balanceHandler.GetTokenBalancesByPath(c, tokenPath)
+			}
 			return
 		}
 	}

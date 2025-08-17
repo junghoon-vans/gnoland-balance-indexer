@@ -21,9 +21,10 @@ type TokenEvent struct {
 }
 
 type QueueMessage struct {
-	MessageID string     `json:"message_id"`
-	Body      TokenEvent `json:"body"`
-	Timestamp time.Time  `json:"timestamp"`
+	MessageID     string     `json:"message_id"`
+	ReceiptHandle string     `json:"receipt_handle"`
+	Body          TokenEvent `json:"body"`
+	Timestamp     time.Time  `json:"timestamp"`
 }
 
 func (te *TokenEvent) ToJSON() ([]byte, error) {

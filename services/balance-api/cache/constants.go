@@ -1,17 +1,18 @@
-package service
+package cache
 
 import (
 	"fmt"
 	"time"
 )
 
+// Cache TTL constants
 const (
 	BalanceAddressTTL  = 5 * time.Minute // Individual address balances
-	BalanceAllTTL      = 1 * time.Minute // Aggregated all balances
 	BalanceTokenTTL    = 3 * time.Minute // Token-specific balances
 	TransferHistoryTTL = 2 * time.Minute // Transfer history
 )
 
+// Cache key prefixes
 const (
 	BalanceAddressPrefix = "balance:address:"
 	BalanceTokenPrefix   = "balance:token:"

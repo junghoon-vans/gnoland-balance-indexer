@@ -94,11 +94,29 @@ func (s *SQSClient) ReceiveMessages(maxMessages int64) ([]*QueueMessage, error) 
 		}
 
 		queueMsg := &QueueMessage{
-			MessageID: *msg.MessageId,
-			Body:      event,
+			MessageID:     *msg.MessageId,
+			ReceiptHandle: *msg.ReceiptHandle,
+			Body:          event,
 		}
 		messages = append(messages, queueMsg)
 	}
 
 	return messages, nil
+}
+
+func (s *SQSClient) DeleteMessage(receiptHandle string) error {
+	input := &sqs.DeleteMessageInput{
+		QueueUrl:      aws.String(s.queueURL),
+		ReceiptHandle: aws.String(receiptHandle),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := s.client.DeleteMessage(ctx, input)
+	if err != nil {
+		return fmt.Errorf("failed to delete message from SQS: %w", err)
+	}
+
+	return nil
 }

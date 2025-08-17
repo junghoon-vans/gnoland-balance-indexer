@@ -45,7 +45,13 @@ func (p *messageProcessor) ProcessMessages(ctx context.Context) error {
 			log.Printf("Error processing token event %s: %v", msg.Body.ID, err)
 			continue
 		}
+
 		log.Printf("Successfully processed token event %s", msg.Body.ID)
+		if err := p.sqsClient.DeleteMessage(msg.ReceiptHandle); err != nil {
+			log.Printf("Failed to delete message %s from queue: %v", msg.MessageID, err)
+		} else {
+			log.Printf("Successfully deleted message %s from queue", msg.MessageID)
+		}
 	}
 
 	return nil

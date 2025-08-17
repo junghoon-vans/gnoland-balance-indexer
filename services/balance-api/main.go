@@ -34,8 +34,8 @@ func main() {
 	transferRepo := repository.NewTransferRepository(db)
 
 	// Initialize services
-	balanceService := service.NewBalanceService(balanceRepo, redisCache)
-	transferService := service.NewTransferService(transferRepo, redisCache)
+	balanceService := service.NewBalanceService(balanceRepo)
+	transferService := service.NewTransferService(transferRepo)
 
 	// Initialize handlers
 	balanceHandler := handler.NewBalanceHandler(balanceService)
@@ -43,7 +43,7 @@ func main() {
 	healthHandler := handler.NewHealthHandler()
 
 	// Initialize router
-	appRouter := router.NewRouter(balanceHandler, transferHandler, healthHandler)
+	appRouter := router.NewRouter(balanceHandler, transferHandler, healthHandler, redisCache)
 	ginRouter := appRouter.SetupRoutes()
 
 	port := os.Getenv("PORT")

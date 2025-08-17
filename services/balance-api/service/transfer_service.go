@@ -1,14 +1,11 @@
 package service
 
 import (
-	"context"
 	"fmt"
-	"log"
 
 	"balance-api/dto"
 	"balance-api/repository"
 	"balance-api/utils"
-	"shared/infra/cache"
 	"shared/models"
 )
 
@@ -18,48 +15,27 @@ type TransferService interface {
 
 type transferService struct {
 	transferRepo repository.TransferRepository
-	cache        cache.Cache
 }
 
-func NewTransferService(transferRepo repository.TransferRepository, cache cache.Cache) TransferService {
+func NewTransferService(transferRepo repository.TransferRepository) TransferService {
 	return &transferService{
 		transferRepo: transferRepo,
-		cache:        cache,
 	}
 }
 
 func (s *transferService) GetTransferHistory(req dto.TransferHistoryRequest) (*dto.TransferHistoryResponse, error) {
-	ctx := context.Background()
 	limit := req.Limit
 	if limit <= 0 {
 		limit = 1000 // default limit
 	}
 
-	// Generate cache key
-	var cacheKey string
-	if req.Address != "" {
-		if !utils.IsValidAddress(req.Address) {
-			return nil, fmt.Errorf("invalid address format")
-		}
-		cacheKey = GenerateTransferKey(req.Address, limit)
-	} else {
-		cacheKey = GenerateTransferKey("", limit)
-	}
-
-	// Try to get from cache first
-	var cachedResponse dto.TransferHistoryResponse
-	if err := s.cache.Get(ctx, cacheKey, &cachedResponse); err == nil {
-		log.Printf("Cache hit for transfer history: %s", cacheKey)
-		return &cachedResponse, nil
-	} else if err != cache.ErrCacheMiss {
-		log.Printf("Cache error for transfer history %s: %v", cacheKey, err)
-	}
-
-	// Cache miss, fetch from database
 	var transfers []models.TokenTransfer
 	var err error
 
 	if req.Address != "" {
+		if !utils.IsValidAddress(req.Address) {
+			return nil, fmt.Errorf("invalid address format")
+		}
 		transfers, err = s.transferRepo.GetTransfersByAddress(req.Address, limit)
 	} else {
 		transfers, err = s.transferRepo.GetAllTransfers(limit)
@@ -80,12 +56,5 @@ func (s *transferService) GetTransferHistory(req dto.TransferHistoryRequest) (*d
 		})
 	}
 
-	response := &dto.TransferHistoryResponse{Transfers: transferInfos}
-
-	// Cache the result with 2 minute TTL (transfer history changes less frequently)
-	if err := s.cache.Set(ctx, cacheKey, response, TransferHistoryTTL); err != nil {
-		log.Printf("Failed to cache transfer history for %s: %v", cacheKey, err)
-	}
-
-	return response, nil
+	return &dto.TransferHistoryResponse{Transfers: transferInfos}, nil
 }
