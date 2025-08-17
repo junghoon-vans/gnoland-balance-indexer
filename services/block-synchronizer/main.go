@@ -18,18 +18,37 @@ import (
 func main() {
 	log.Println("Starting Block Synchronizer...")
 
+	db := initializeDatabase()
+	sqsClient := initializeSQSClient()
+	gqlClient := graphql.NewClient()
+
+	synchronizerService := initializeServices(db, sqsClient, gqlClient)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	startSynchronizer(ctx, synchronizerService)
+	waitForShutdownSignal()
+	gracefulShutdown(cancel)
+}
+
+func initializeDatabase() *database.Database {
 	db, err := database.NewPostgresDB()
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	return db
+}
 
+func initializeSQSClient() *queue.SQSClient {
 	sqsClient, err := queue.NewSQSClient()
 	if err != nil {
 		log.Fatalf("Failed to create SQS client: %v", err)
 	}
+	return sqsClient
+}
 
-	gqlClient := graphql.NewClient()
-
+func initializeServices(db *database.Database, sqsClient *queue.SQSClient, gqlClient *graphql.Client) service.SynchronizerService {
 	// Initialize repositories
 	blockRepo := repository.NewBlockRepository(db)
 	transactionRepo := repository.NewTransactionRepository(db)
@@ -41,23 +60,25 @@ func main() {
 	blockService := service.NewBlockService(blockRepo, transactionRepo, eventRepo, gqlClient, transactionService)
 
 	// Initialize synchronizer service
-	synchronizerService := service.NewSynchronizerService(blockRepo, blockService)
+	return service.NewSynchronizerService(blockRepo, blockService)
+}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func startSynchronizer(ctx context.Context, synchronizerService service.SynchronizerService) {
 	go func() {
 		if err := synchronizerService.Start(ctx); err != nil {
 			log.Fatalf("Block synchronizer error: %v", err)
 		}
 	}()
+}
 
+func waitForShutdownSignal() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
 	<-sigChan
 	log.Println("Shutting down Block Synchronizer...")
+}
 
+func gracefulShutdown(cancel context.CancelFunc) {
 	cancel()
 	time.Sleep(5 * time.Second)
 	log.Println("Block Synchronizer stopped")
