@@ -13,7 +13,7 @@ import (
 )
 
 type BalanceService interface {
-	UpdateBalanceAtomic(ctx context.Context, address, tokenPath, amount string) error
+	UpdateBalance(ctx context.Context, address, tokenPath, amount string) error
 }
 
 type balanceService struct {
@@ -28,10 +28,25 @@ func NewBalanceService(db *database.Database, balanceRepo repository.BalanceRepo
 	}
 }
 
-func (s *balanceService) increaseBalance(tx *gorm.DB, address, tokenPath string, amount *big.Int) error {
+// UpdateBalance updates balance in a transaction (positive amount increases, negative decreases)
+func (s *balanceService) UpdateBalance(ctx context.Context, address, tokenPath, amount string) error {
+	amountBig := new(big.Int)
+	if _, ok := amountBig.SetString(amount, 10); !ok {
+		return fmt.Errorf("invalid amount format: %s", amount)
+	}
+
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		return s.updateBalanceInTx(tx, address, tokenPath, amountBig)
+	})
+}
+
+func (s *balanceService) updateBalanceInTx(tx *gorm.DB, address, tokenPath string, amount *big.Int) error {
 	balance, err := s.balanceRepo.GetBalanceInTx(tx, address, tokenPath)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
+			if amount.Sign() < 0 {
+				return fmt.Errorf("insufficient balance: no existing balance for negative amount %s", amount.String())
+			}
 			newBalance := &models.TokenBalance{
 				Address:   address,
 				TokenPath: tokenPath,
@@ -48,46 +63,11 @@ func (s *balanceService) increaseBalance(tx *gorm.DB, address, tokenPath string,
 	}
 
 	newAmount := new(big.Int).Add(currentAmount, amount)
+
+	if newAmount.Sign() < 0 {
+		return fmt.Errorf("insufficient balance: current %s, change %s, result would be %s", currentAmount.String(), amount.String(), newAmount.String())
+	}
+
 	balance.Amount = newAmount.String()
-
 	return s.balanceRepo.UpdateBalanceInTx(tx, balance)
-}
-
-func (s *balanceService) decreaseBalance(tx *gorm.DB, address, tokenPath string, amount *big.Int) error {
-	balance, err := s.balanceRepo.GetBalanceInTx(tx, address, tokenPath)
-	if err != nil {
-		return err
-	}
-
-	currentAmount := new(big.Int)
-	if _, ok := currentAmount.SetString(balance.Amount, 10); !ok {
-		return fmt.Errorf("invalid current balance format: %s", balance.Amount)
-	}
-
-	if currentAmount.Cmp(amount) < 0 {
-		return fmt.Errorf("insufficient balance: current %s, required %s", currentAmount.String(), amount.String())
-	}
-
-	newAmount := new(big.Int).Sub(currentAmount, amount)
-	balance.Amount = newAmount.String()
-
-	return s.balanceRepo.UpdateBalanceInTx(tx, balance)
-}
-
-// UpdateBalanceAtomic updates balance using the existing transaction-based approach
-func (s *balanceService) UpdateBalanceAtomic(ctx context.Context, address, tokenPath, amount string) error {
-	amountBig := new(big.Int)
-	if _, ok := amountBig.SetString(amount, 10); !ok {
-		return fmt.Errorf("invalid amount format: %s", amount)
-	}
-
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		if amountBig.Sign() >= 0 {
-			return s.increaseBalance(tx, address, tokenPath, amountBig)
-		} else {
-			// Convert to positive for decrease operation
-			absAmount := new(big.Int).Abs(amountBig)
-			return s.decreaseBalance(tx, address, tokenPath, absAmount)
-		}
-	})
 }

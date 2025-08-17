@@ -45,7 +45,7 @@ func (h *tokenEventHandler) ProcessBalanceUpdate(ctx context.Context, update *qu
 		return nil
 	}
 
-	if err := h.balanceService.UpdateBalanceAtomic(ctx, update.Address, update.TokenPath, update.Amount); err != nil {
+	if err := h.balanceService.UpdateBalance(ctx, update.Address, update.TokenPath, update.Amount); err != nil {
 		return fmt.Errorf("failed to update balance atomically: %w", err)
 	}
 
@@ -59,7 +59,6 @@ func (h *tokenEventHandler) ProcessBalanceUpdate(ctx context.Context, update *qu
 
 	if err := h.processedEventRepo.MarkEventProcessed(processedEvent); err != nil {
 		log.Printf("Warning: Failed to mark balance update %s as processed: %v", eventIdentifier, err)
-		// Don't fail the operation - the atomic balance update already succeeded
 	}
 
 	log.Printf("Successfully processed balance update %s (address: %s, amount: %s)",

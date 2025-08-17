@@ -14,7 +14,7 @@ type MockBalanceService struct {
 	mock.Mock
 }
 
-func (m *MockBalanceService) UpdateBalanceAtomic(ctx context.Context, address, tokenPath, amount string) error {
+func (m *MockBalanceService) UpdateBalance(ctx context.Context, address, tokenPath, amount string) error {
 	args := m.Called(ctx, address, tokenPath, amount)
 	return args.Error(0)
 }
